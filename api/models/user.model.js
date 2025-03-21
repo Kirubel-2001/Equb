@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema(
       enum: ["Admin", "Equb Leader", "Participant"],
       required: true,
     },
+    phone:{
+      type: String,
+      required: true,
+    }
   },
   { timestamps: true }
 );
