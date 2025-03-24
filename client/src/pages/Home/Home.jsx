@@ -1,32 +1,28 @@
-
-import React from 'react';
-import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  Shield, 
+import React from "react";
+import {
+  Users,
+  Calendar,
+  DollarSign,
+  Shield,
   Award,
   TrendingUp,
-} from 'lucide-react';
+} from "lucide-react";
 /* eslint-disable-next-line no-unused-vars */
-import { motion } from 'framer-motion';
-import { Header } from '../../components/Header';
-import Footer from '../../components/Footer';
-import EqubCard from '../../components/EqubCard';
-
-
+import { motion } from "framer-motion";
+import { Header } from "../../components/Header";
+import Footer from "../../components/Footer";
+import EqubCard from "../../components/EqubCard";
+import SearchBar from "../../components/SearchBar";
 
 const Home = () => {
-  
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       {/* Hero Section */}
       <div className="bg-indigo-600 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -36,7 +32,8 @@ const Home = () => {
               Modern Equb Management Platform
             </h1>
             <p className="mt-3 max-w-md mx-auto text-base text-indigo-100 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-              Join trusted rotating savings groups, manage your contributions, and achieve your financial goals together.
+              Join trusted rotating savings groups, manage your contributions,
+              and achieve your financial goals together.
             </p>
             <div className="mt-10 flex justify-center gap-3">
               <motion.button
@@ -75,36 +72,8 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Search Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="relative z-10"
-        >
-          <div className="flex items-center bg-white rounded-xl shadow-lg border border-gray-100 p-2">
-            <div className="flex-1 min-w-0 px-4">
-              <input
-                type="text"
-                placeholder="Search for Equb groups..."
-                className="w-full text-gray-700 text-lg focus:outline-none"
-              />
-            </div>
-            <div className="flex items-center space-x-2 px-4">
-              <select className="text-gray-700 border-r border-gray-200 pr-4 focus:outline-none">
-                <option>All Locations</option>
-                <option>Addis Ababa</option>
-                <option>Bahir Dar</option>
-                <option>Hawassa</option>
-              </select>
-              <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
-                Search
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      <SearchBar/>
+      
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -114,16 +83,36 @@ const Home = () => {
           transition={{ delay: 0.3 }}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl font-bold text-gray-900">Why Choose Our Platform?</h2>
-          <p className="mt-4 text-xl text-gray-600">Experience the benefits of traditional Equb with modern convenience</p>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Why Choose Our Platform?
+          </h2>
+          <p className="mt-4 text-xl text-gray-600">
+            Experience the benefits of traditional Equb with modern convenience
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { icon: Shield, title: "Secure & Trusted", description: "Identity verification and secure payment tracking" },
-            { icon: Users, title: "Community Driven", description: "Join groups with like-minded savers" },
-            { icon: Calendar, title: "Flexible Cycles", description: "Weekly, monthly, or custom saving periods" },
-            { icon: DollarSign, title: "Transparent", description: "Clear tracking of all contributions and payouts" }
+            {
+              icon: Shield,
+              title: "Secure & Trusted",
+              description: "Identity verification and secure payment tracking",
+            },
+            {
+              icon: Users,
+              title: "Community Driven",
+              description: "Join groups with like-minded savers",
+            },
+            {
+              icon: Calendar,
+              title: "Flexible Cycles",
+              description: "Weekly, monthly, or custom saving periods",
+            },
+            {
+              icon: DollarSign,
+              title: "Transparent",
+              description: "Clear tracking of all contributions and payouts",
+            },
           ].map((feature, index) => (
             <motion.div
               key={index}
@@ -135,14 +124,16 @@ const Home = () => {
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
                 <feature.icon className="w-6 h-6 text-indigo-600" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {feature.title}
+              </h3>
               <p className="mt-2 text-gray-600">{feature.description}</p>
             </motion.div>
           ))}
         </div>
       </div>
 
-     <EqubCard/>
+      <EqubCard />
 
       {/* Stats Section */}
       <div className="bg-indigo-600 py-16">
@@ -151,7 +142,7 @@ const Home = () => {
             {[
               { icon: Users, value: "10,000+", label: "Active Members" },
               { icon: Award, value: "1,000+", label: "Successful Equbs" },
-              { icon: TrendingUp, value: "5M+ ETB", label: "Total Savings" }
+              { icon: TrendingUp, value: "5M+ ETB", label: "Total Savings" },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -171,7 +162,7 @@ const Home = () => {
         </div>
       </div>
 
-      <Footer/>
+      <Footer />
     </div>
   );
 };
