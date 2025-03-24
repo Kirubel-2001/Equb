@@ -3,6 +3,7 @@ import {Signin} from './pages/Home/Signin'
 import Home from './pages/Home/Home'
 import Profile from './pages/Home/Profile'
 import {SignUp} from './pages/Home/SignUp'
+import { Header } from './pages/Home/Header'
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/profile" element={<Profile/>} />
         <Route path="/signin" element={<Signin/>} />
         <Route path="/signup" element={<SignUp/>} />
+        <Route path="/header" element={<Header/>} />
         
       </Routes>
     </BrowserRouter>
