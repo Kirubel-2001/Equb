@@ -2,7 +2,12 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    username: {
+    firstName: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    lastName: {
       type: String,
       required: true,
       unique: true,
@@ -18,14 +23,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    role: {
-      type: String,
-      enum: ["Admin", "Equb Leader", "Participant"],
-      required: true,
-    },
     phone:{
       type: String,
       required: true,
+    },
+    role: {
+      type: String,
+      enum: ["Admin", "Participant"],
+      default: "Participant",
     }
   },
   { timestamps: true }
