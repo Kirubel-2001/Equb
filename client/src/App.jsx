@@ -3,7 +3,7 @@ import {Signin} from './pages/Home/Signin'
 import Home from './pages/Home/Home'
 import Profile from './pages/Home/Profile'
 import {SignUp} from './pages/Home/SignUp'
-import { Header } from './pages/Home/Header'
+import { Header } from './components/Header'
 
 
 function App() {

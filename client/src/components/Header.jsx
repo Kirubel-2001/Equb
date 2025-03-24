@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useState, useEffect } from "react";
+import {
   Bell,
   Menu,
   X,
@@ -8,30 +8,38 @@ import {
   Settings,
   HelpCircle,
   Plus,
-} from 'lucide-react';
+} from "lucide-react";
 /* eslint-disable-next-line no-unused-vars */
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+
 
 export const Header = () => {
-  
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
   const [notifications] = useState([
-    { id: 1, message: "New Equb group created in your area", time: "2 mins ago" },
+    {
+      id: 1,
+      message: "New Equb group created in your area",
+      time: "2 mins ago",
+    },
     { id: 2, message: "Your payment is due tomorrow", time: "1 hour ago" },
-    { id: 3, message: "Congratulations! You won this week's Equb", time: "2 hours ago" },
+    {
+      id: 3,
+      message: "Congratulations! You won this week's Equb",
+      time: "2 hours ago",
+    },
   ]);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const navLinks = [
@@ -43,7 +51,11 @@ export const Header = () => {
   ];
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-transparent'}`}>
+    <nav
+      className={`fixed w-full z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white shadow-md" : "bg-transparent"
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -52,7 +64,11 @@ export const Header = () => {
               whileHover={{ scale: 1.05 }}
               className="flex items-center"
             >
-              <span className={`text-2xl font-bold ${isScrolled ? 'text-indigo-600' : 'text-white'}`}>
+              <span
+                className={`text-2xl font-bold ${
+                  isScrolled ? "text-indigo-600" : "text-white"
+                }`}
+              >
                 EQUB
               </span>
             </motion.div>
@@ -66,7 +82,9 @@ export const Header = () => {
                 href={link.href}
                 whileHover={{ y: -2 }}
                 className={`text-sm font-medium transition-colors ${
-                  isScrolled ? 'text-gray-700 hover:text-indigo-600' : 'text-white hover:text-indigo-100'
+                  isScrolled
+                    ? "text-gray-700 hover:text-indigo-600"
+                    : "text-white hover:text-indigo-100"
                 }`}
               >
                 {link.name}
@@ -84,11 +102,14 @@ export const Header = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className={`p-2 rounded-full ${
-                      isScrolled ? 'hover:bg-gray-100' : 'hover:bg-white/10'
+                      isScrolled ? "hover:bg-gray-100" : "hover:bg-white/10"
                     }`}
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
                   >
-                    <Bell className={isScrolled ? 'text-gray-700' : 'text-white'} size={20} />
+                    <Bell
+                      className={isScrolled ? "text-gray-700" : "text-white"}
+                      size={20}
+                    />
                     <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
                       3
                     </span>
@@ -108,8 +129,12 @@ export const Header = () => {
                             key={notification.id}
                             className="px-4 py-3 hover:bg-gray-50 cursor-pointer"
                           >
-                            <p className="text-sm text-gray-700">{notification.message}</p>
-                            <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                            <p className="text-sm text-gray-700">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {notification.time}
+                            </p>
                           </div>
                         ))}
                       </motion.div>
@@ -123,8 +148,8 @@ export const Header = () => {
                   whileTap={{ scale: 0.95 }}
                   className={`flex items-center px-4 py-2 rounded-lg ${
                     isScrolled
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      : 'bg-white text-indigo-600 hover:bg-indigo-50'
+                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      : "bg-white text-indigo-600 hover:bg-indigo-50"
                   }`}
                 >
                   <Plus size={20} className="mr-2" />
@@ -153,21 +178,30 @@ export const Header = () => {
                         exit={{ opacity: 0, y: 10 }}
                         className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
                       >
-                        <a href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <a
+                          href="/profile"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
                           <User className="w-4 h-4 mr-3" />
                           Profile
                         </a>
-                        <a href="/settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <a
+                          href="/settings"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
                           <Settings className="w-4 h-4 mr-3" />
                           Settings
                         </a>
-                        <a href="/help" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                        <a
+                          href="/help"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
                           <HelpCircle className="w-4 h-4 mr-3" />
                           Help Center
                         </a>
                         <hr className="my-2" />
-                        <a 
-                          href="/logout" 
+                        <a
+                          href="/logout"
                           className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
                           onClick={(e) => {
                             e.preventDefault();
@@ -186,32 +220,32 @@ export const Header = () => {
             ) : (
               /* Sign in / Sign up buttons - When not logged in */
               <div className="flex items-center space-x-3">
-                <Link to='signin'>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsLoggedIn(true)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isScrolled 
-                      ? 'text-indigo-600 hover:bg-indigo-50' 
-                      : 'text-white hover:bg-white/10'
-                  }`}
-                >
-                  Sign in
-                </motion.button>
+                <Link to="signin">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsLoggedIn(true)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      isScrolled
+                        ? "text-indigo-600 hover:bg-indigo-50"
+                        : "text-white hover:bg-white/10"
+                    }`}
+                  >
+                    Sign in
+                  </motion.button>
                 </Link>
                 <Link to="/signup">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`px-4 py-2 rounded-lg ${
-                    isScrolled
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                      : 'bg-white text-indigo-600 hover:bg-indigo-50'
-                  }`}
-                >
-                  Sign up
-                </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`px-4 py-2 rounded-lg ${
+                      isScrolled
+                        ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                        : "bg-white text-indigo-600 hover:bg-indigo-50"
+                    }`}
+                  >
+                    Sign up
+                  </motion.button>
                 </Link>
               </div>
             )}
@@ -223,7 +257,7 @@ export const Header = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={isScrolled ? 'text-gray-700' : 'text-white'}
+              className={isScrolled ? "text-gray-700" : "text-white"}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </motion.button>
@@ -236,7 +270,7 @@ export const Header = () => {
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white border-t"
           >
@@ -251,7 +285,7 @@ export const Header = () => {
                 </a>
               ))}
               <hr className="my-2" />
-              
+
               {isLoggedIn ? (
                 <>
                   <a
