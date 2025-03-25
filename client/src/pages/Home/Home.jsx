@@ -13,10 +13,12 @@ import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
 import EqubCard from "../../components/EqubCard";
 import SearchBar from "../../components/SearchBar";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navbar Section */}
       <Header />
 
       {/* Hero Section */}
@@ -36,6 +38,8 @@ const Home = () => {
               and achieve your financial goals together.
             </p>
             <div className="mt-10 flex justify-center gap-3">
+              <Link
+                to="/signup">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -43,6 +47,8 @@ const Home = () => {
               >
                 Get Started
               </motion.button>
+              </Link>
+              <Link to="/about">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -50,6 +56,7 @@ const Home = () => {
               >
                 Learn More
               </motion.button>
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -71,9 +78,8 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-      <SearchBar/>
-      
+      {/* Search Bar */}
+      <SearchBar />
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -132,7 +138,7 @@ const Home = () => {
           ))}
         </div>
       </div>
-
+      {/* Active Equbs Section */}
       <EqubCard />
 
       {/* Stats Section */}
