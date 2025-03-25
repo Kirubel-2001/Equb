@@ -32,7 +32,7 @@ export const ParticipantDashboard = () => {
   const [notificationsCount, setNotificationsCount] = useState(3);
   const [activeCategory, setActiveCategory] = useState("all");
   const [equbs, setEqubs] = useState([]);
-  
+
   // Simulated data for demo
   useEffect(() => {
     // Simulated API call
@@ -111,18 +111,21 @@ export const ParticipantDashboard = () => {
           createdAt: "2025-01-25",
         },
       ];
-      
+
       setEqubs(mockEqubs);
     };
-    
+
     fetchEqubs();
   }, []);
 
-  const filteredEqubs = equbs.filter(equb => {
-    if (activeCategory !== "all" && equb.status !== activeCategory) return false;
-    
-    return equb.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-           equb.location.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredEqubs = equbs.filter((equb) => {
+    if (activeCategory !== "all" && equb.status !== activeCategory)
+      return false;
+
+    return (
+      equb.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equb.location.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const toggleSidebar = () => {
@@ -130,9 +133,12 @@ export const ParticipantDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 flex">
+    <div
+      onClick={() => setIsFilterOpen(!isFilterOpen)}
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 flex"
+    >
       {/* Sidebar */}
-      <motion.div 
+      <motion.div
         initial={{ width: isSidebarOpen ? 240 : 72 }}
         animate={{ width: isSidebarOpen ? 240 : 72 }}
         transition={{ duration: 0.3 }}
@@ -142,21 +148,33 @@ export const ParticipantDashboard = () => {
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             {isSidebarOpen ? (
               <>
-              <Link to="/">
-                <h2 className="text-xl font-bold text-blue-600">Equb System</h2>
+                <Link to="/">
+                  <h2 className="text-xl font-bold text-blue-600">
+                    Equb System
+                  </h2>
                 </Link>
-               <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700">
+                <button
+                  onClick={toggleSidebar}
+                  className="text-gray-500 hover:text-gray-700"
+                >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
               </>
             ) : (
-              <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 mx-auto">
+              <button
+                onClick={toggleSidebar}
+                className="text-gray-500 hover:text-gray-700 mx-auto"
+              >
                 <Menu className="h-5 w-5" />
               </button>
             )}
           </div>
-          
-          <div className={`flex items-center gap-3 p-4 border-b pb-4 ${!isSidebarOpen && 'justify-center'}`}>
+
+          <div
+            className={`flex items-center gap-3 p-4 border-b pb-4 ${
+              !isSidebarOpen && "justify-center"
+            }`}
+          >
             <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
               <User className="h-5 w-5" />
             </div>
@@ -167,29 +185,49 @@ export const ParticipantDashboard = () => {
               </div>
             )}
           </div>
-          
+
           <div className="flex-1 py-4">
             <ul className="space-y-1">
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-blue-700 bg-blue-50 rounded-lg mx-2 font-medium`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-blue-700 bg-blue-50 rounded-lg mx-2 font-medium`}
+                >
                   <Home className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Dashboard</span>}
                 </a>
               </li>
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                >
                   <Grid className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">My Equbs</span>}
                 </a>
               </li>
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                >
                   <PlusSquare className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Create Equb</span>}
                 </a>
               </li>
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition relative`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition relative`}
+                >
                   <Bell className="h-5 w-5 flex-shrink-0" />
                   {notificationsCount > 0 && (
                     <span className="absolute top-2 left-5 transform translate-x-1 -translate-y-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
@@ -200,22 +238,37 @@ export const ParticipantDashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                >
                   <HelpCircle className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Help</span>}
                 </a>
               </li>
               <li>
-                <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}>
+                <a
+                  href="#"
+                  className={`flex items-center ${
+                    isSidebarOpen ? "px-4" : "justify-center px-2"
+                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                >
                   <Settings className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Settings</span>}
                 </a>
               </li>
             </ul>
           </div>
-          
+
           <div className="p-4 border-t">
-            <a href="#" className={`flex items-center ${isSidebarOpen ? 'px-4' : 'justify-center px-2'} py-3 text-red-500 hover:bg-red-50 rounded-lg transition`}>
+            <a
+              href="#"
+              className={`flex items-center ${
+                isSidebarOpen ? "px-4" : "justify-center px-2"
+              } py-3 text-red-500 hover:bg-red-50 rounded-lg transition`}
+            >
               <LogOut className="h-5 w-5 flex-shrink-0" />
               {isSidebarOpen && <span className="ml-3">Log Out</span>}
             </a>
@@ -224,12 +277,16 @@ export const ParticipantDashboard = () => {
       </motion.div>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? 'ml-60' : 'ml-20'} flex-1`}>
+      <div
+        className={`transition-all duration-300 ${
+          isSidebarOpen ? "ml-60" : "ml-20"
+        } flex-1`}
+      >
         <header className="bg-white shadow-sm sticky top-0 z-10 p-4 flex justify-between items-center">
           <div className="flex items-center">
             <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Bell className="h-6 w-6 text-gray-500 hover:text-blue-600 cursor-pointer" />
@@ -244,18 +301,20 @@ export const ParticipantDashboard = () => {
 
         <main className="px-6 py-8">
           {/* Welcome Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="mb-8"
           >
             <h2 className="text-2xl font-bold mb-2">Welcome back, Abebe!</h2>
-            <p className="text-gray-600">Find and join your next Equb, or create a new one.</p>
+            <p className="text-gray-600">
+              Find and join your next Equb, or create a new one.
+            </p>
           </motion.div>
 
           {/* Search and Filter Section */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
@@ -271,7 +330,7 @@ export const ParticipantDashboard = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              
+
               <div className="relative">
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -280,28 +339,46 @@ export const ParticipantDashboard = () => {
                   <Filter className="h-5 w-5 text-gray-500" />
                   <span>Filter</span>
                 </button>
-                
+
                 {isFilterOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10 p-3 border border-gray-100">
                     <h4 className="font-medium mb-2">Status</h4>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="status" value="all" checked={activeCategory === "all"} onChange={() => setActiveCategory("all")} />
+                        <input
+                          type="radio"
+                          name="status"
+                          value="all"
+                          checked={activeCategory === "all"}
+                          onChange={() => setActiveCategory("all")}
+                        />
                         <span>All</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="status" value="active" checked={activeCategory === "active"} onChange={() => setActiveCategory("active")} />
+                        <input
+                          type="radio"
+                          name="status"
+                          value="active"
+                          checked={activeCategory === "active"}
+                          onChange={() => setActiveCategory("active")}
+                        />
                         <span>Active</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="status" value="pending" checked={activeCategory === "pending"} onChange={() => setActiveCategory("pending")} />
+                        <input
+                          type="radio"
+                          name="status"
+                          value="pending"
+                          checked={activeCategory === "pending"}
+                          onChange={() => setActiveCategory("pending")}
+                        />
                         <span>Pending</span>
                       </label>
                     </div>
                   </div>
                 )}
               </div>
-              
+
               <button className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm font-medium">
                 <PlusCircle className="h-5 w-5" />
                 <span>Create Equb</span>
@@ -311,7 +388,7 @@ export const ParticipantDashboard = () => {
 
           {/* Popular Equbs Section */}
 
-          <EqubCard/>
+          <EqubCard />
           {/* All Equbs Section */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
@@ -319,7 +396,7 @@ export const ParticipantDashboard = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <h3 className="text-xl font-bold mb-4">All Equbs</h3>
-            
+
             <div className="space-y-4">
               {filteredEqubs.length > 0 ? (
                 filteredEqubs.map((equb) => (
@@ -331,39 +408,45 @@ export const ParticipantDashboard = () => {
                     <div className="mb-4 md:mb-0">
                       <div className="flex items-center">
                         <h4 className="font-bold">{equb.name}</h4>
-                        <span className={`ml-3 text-xs px-2 py-1 rounded-full ${equb.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {equb.status === 'active' ? 'Active' : 'Pending'}
+                        <span
+                          className={`ml-3 text-xs px-2 py-1 rounded-full ${
+                            equb.status === "active"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {equb.status === "active" ? "Active" : "Pending"}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center text-gray-500 text-sm mt-1">
                         <MapPin className="h-4 w-4 mr-1" />
                         <span>{equb.location}</span>
                       </div>
-                      
+
                       <div className="flex flex-wrap gap-3 mt-3">
                         <div className="text-sm flex items-center text-gray-600">
                           <Users className="h-4 w-4 mr-1 text-blue-600" />
                           {equb.members}/{equb.totalMembers} members
                         </div>
-                        
+
                         <div className="text-sm flex items-center text-gray-600">
                           <DollarSign className="h-4 w-4 mr-1 text-blue-600" />
                           {equb.amount} ETB
                         </div>
-                        
+
                         <div className="text-sm flex items-center text-gray-600">
                           <Clock className="h-4 w-4 mr-1 text-blue-600" />
                           {equb.cycle}
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       <button className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition">
                         Details
                       </button>
-                      
+
                       <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center">
                         <UserPlus className="h-4 w-4 mr-1" />
                         Join
@@ -373,7 +456,9 @@ export const ParticipantDashboard = () => {
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No Equbs found matching your criteria.</p>
+                  <p className="text-gray-500">
+                    No Equbs found matching your criteria.
+                  </p>
                   <button className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
                     Create a new Equb
                   </button>
@@ -386,9 +471,15 @@ export const ParticipantDashboard = () => {
             <div className="text-center text-gray-500 text-sm">
               <p>© 2025 Equb Management System. All rights reserved.</p>
               <div className="mt-2">
-                <a href="#" className="text-blue-600 hover:underline mx-2">Terms of Service</a>
-                <a href="#" className="text-blue-600 hover:underline mx-2">Privacy Policy</a>
-                <a href="#" className="text-blue-600 hover:underline mx-2">Contact Us</a>
+                <a href="#" className="text-blue-600 hover:underline mx-2">
+                  Terms of Service
+                </a>
+                <a href="#" className="text-blue-600 hover:underline mx-2">
+                  Privacy Policy
+                </a>
+                <a href="#" className="text-blue-600 hover:underline mx-2">
+                  Contact Us
+                </a>
               </div>
             </div>
           </footer>
