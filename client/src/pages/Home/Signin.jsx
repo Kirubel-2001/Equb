@@ -11,7 +11,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
-
+import {Header} from '../../components/Header';
+import Footer from '../../components/Footer';
 // SignIn Page Component
 export const Signin = () => {
   const [email, setEmail] = useState('');
@@ -75,7 +76,27 @@ export const Signin = () => {
   };
 
   return (
+    <div>
+<Header/>
+     {/*   Header bg */}
+     <div className="relative bg-indigo-600 h-16">
+              <div className="absolute bottom-0 inset-x-0">
+                <svg
+                  viewBox="0 0 0 0"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-full h-full"
+                >
+                  <path
+                    fill="rgb(249 250 251)"
+                    d="M0 100H1440V0C1440 0 1144 100 720 100C296 100 0 0 0 0V100Z"
+                  />
+                </svg>
+              </div>
+            </div>
+    
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col justify-center">
+     
       <div className="max-w-md mx-auto w-full px-4 sm:px-6">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="mb-8">
@@ -263,6 +284,8 @@ export const Signin = () => {
           </div>
         </div>
       </div>
+    </div>
+    <Footer/>
     </div>
   );
 };

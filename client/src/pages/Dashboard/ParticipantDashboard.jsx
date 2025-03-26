@@ -32,6 +32,7 @@ export const ParticipantDashboard = () => {
   const [notificationsCount, setNotificationsCount] = useState(3);
   const [activeCategory, setActiveCategory] = useState("all");
   const [equbs, setEqubs] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   // Simulated data for demo
   useEffect(() => {
@@ -300,6 +301,7 @@ export const ParticipantDashboard = () => {
         </header>
 
         <main className="px-6 py-8">
+
           {/* Welcome Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -327,7 +329,10 @@ export const ParticipantDashboard = () => {
                   placeholder="Search Equbs by name or location..."
                   className="pl-10 pr-4 py-3 w-full rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsTyping(e.target.value.length > 0);
+                  }}
                 />
               </div>
 
@@ -388,7 +393,8 @@ export const ParticipantDashboard = () => {
 
           {/* Popular Equbs Section */}
 
-          <EqubCard />
+          {!isTyping && <EqubCard />}
+
           {/* All Equbs Section */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}

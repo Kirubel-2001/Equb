@@ -222,7 +222,7 @@ export const Header = () => {
             ) : (
               /* Sign in / Sign up buttons - When not logged in */
               <div className="flex items-center space-x-3">
-                <Link to="signin">
+                <Link to="/signin">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

@@ -5,9 +5,11 @@ import Profile from './pages/Home/Profile'
 import {SignUp} from './pages/Home/SignUp'
 import { Header } from './components/Header'
 import { ParticipantDashboard } from './pages/Dashboard/ParticipantDashboard'
+import { AdminDashboard } from './pages/Dashboard/AdminDashboard'
 import {About} from './pages/Home/About'
 import { FindEqub } from './pages/Home/FindEqub'
 import Contact from './pages/Home/Contact'
+import MyEqubs from './pages/Dashboard/MyEqub'
 
 
 function App() {
@@ -23,6 +25,7 @@ function App() {
         <Route path="/about" element={<About/>} />
         <Route path="/find" element={<FindEqub/>} />
         <Route path="/contact" element={<Contact/>} />
+        <Route path="/admin" element={<AdminDashboard/>} />
         
       </Routes>
     </BrowserRouter>
