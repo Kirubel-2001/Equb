@@ -7,9 +7,9 @@ import { Header } from './components/Header'
 import { ParticipantDashboard } from './pages/Dashboard/ParticipantDashboard'
 import { AdminDashboard } from './pages/Dashboard/AdminDashboard'
 import {About} from './pages/Home/About'
-import { FindEqub } from './pages/Home/FindEqub'
 import Contact from './pages/Home/Contact'
-import MyEqubs from './pages/Dashboard/MyEqub'
+import { FindEqub } from './components/FindEqub'
+// import MyEqubs from './pages/Dashboard/MyEqub'
 
 
 function App() {

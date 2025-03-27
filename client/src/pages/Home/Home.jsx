@@ -11,9 +11,9 @@ import {
 import { motion } from "framer-motion";
 import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
-import EqubCard from "../../components/EqubCard";
 import SearchBar from "../../components/SearchBar";
 import { Link } from "react-router-dom";
+import { FindEqub } from "../../components/FindEqub";
 
 const Home = () => {
   return (
@@ -81,6 +81,8 @@ const Home = () => {
       {/* Search Bar */}
       <SearchBar />
 
+      {/* Active Equbs Section */}
+      <FindEqub />
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div
@@ -138,8 +140,6 @@ const Home = () => {
           ))}
         </div>
       </div>
-      {/* Active Equbs Section */}
-      <EqubCard />
 
       {/* Stats Section */}
       <div className="bg-indigo-600 py-16">

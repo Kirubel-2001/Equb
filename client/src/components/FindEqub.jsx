@@ -11,10 +11,7 @@ import {
   Users,
   DollarSign,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import EqubCard from "../../components/EqubCard";
-import { Header } from "../../components/Header";
-import Footer from "../../components/Footer";
+import EqubCard from "./EqubCard";
 
 export const FindEqub = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -123,26 +120,6 @@ export const FindEqub = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 ">
-      <div>
-        <Header />
-
-        {/*   Header bg */}
-        <div className="relative bg-indigo-600 h-16">
-          <div className="absolute bottom-0 inset-x-0">
-            <svg
-              viewBox="0 0 0 0"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="w-full h-full"
-            >
-              <path
-                fill="rgb(249 250 251)"
-                d="M0 100H1440V0C1440 0 1144 100 720 100C296 100 0 0 0 0V100Z"
-              />
-            </svg>
-          </div>
-        </div>
-      </div>
       {/* Main Content */}
       <div
         className={`transition-all duration-300 ${
@@ -150,18 +127,6 @@ export const FindEqub = () => {
         } flex-1`}
       >
         <main className="px-6 py-8">
-          {/* Welcome Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-8"
-          >
-            <h2 className="text-2xl font-bold mb-2">Welcome!</h2>
-            <p className="text-gray-600">
-              Find and join your next Equb, or create a new one.
-            </p>
-          </motion.div>
 
           {/* Search and Filter Section */}
           <motion.div
@@ -319,8 +284,6 @@ export const FindEqub = () => {
           </motion.section>
         </main>
       </div>
-      {/* Footer Section */}
-      <Footer />
     </div>
   );
 };

@@ -12,14 +12,15 @@ import {
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-
+import { useSelector } from "react-redux";
 
 export const Header = () => {
+  const { currentUser } = useSelector((state) => state.user);
+  console.log(currentUser);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
   const [notifications] = useState([
     {
       id: 1,
@@ -96,7 +97,7 @@ export const Header = () => {
 
           {/* Right section */}
           <div className="hidden md:flex items-center space-x-4">
-            {isLoggedIn ? (
+            {currentUser ? (
               <>
                 {/* Notifications - Only show when logged in */}
                 <div className="relative">
@@ -205,11 +206,6 @@ export const Header = () => {
                         <a
                           href="/logout"
                           className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setIsLoggedIn(false);
-                            setIsUserMenuOpen(false);
-                          }}
                         >
                           <LogOut className="w-4 h-4 mr-3" />
                           Sign out
@@ -226,7 +222,6 @@ export const Header = () => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsLoggedIn(true)}
                     className={`px-4 py-2 rounded-lg transition-colors ${
                       isScrolled
                         ? "text-indigo-600 hover:bg-indigo-50"
@@ -288,7 +283,7 @@ export const Header = () => {
               ))}
               <hr className="my-2" />
 
-              {isLoggedIn ? (
+              {currentUser ? (
                 <>
                   <a
                     href="/create"
@@ -306,39 +301,26 @@ export const Header = () => {
                   <a
                     href="/logout"
                     className="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-gray-50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsLoggedIn(false);
-                      setIsMobileMenuOpen(false);
-                    }}
                   >
                     Sign out
                   </a>
                 </>
               ) : (
                 <>
-                  <a
-                    href="/signin"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-gray-50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsLoggedIn(true);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    Sign in
-                  </a>
-                  <a
-                    href="/logout"
-                    className="block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-gray-50"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsLoggedIn(false);
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    Sign out
-                  </a>
+                  <Link to="/signin">
+                    <a
+                      className="block px-3 py-2 rounded-md text-base font-medium text-indigo-600 hover:bg-gray-50"
+                    >
+                      Sign in
+                    </a>
+                  </Link>
+                  <Link to="/signup">
+                    <a
+                      className="block px-3 py-2 rounded-md text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                    >
+                      Sign up
+                    </a>
+                  </Link>
                 </>
               )}
             </div>
