@@ -11,12 +11,11 @@ import {
 } from "lucide-react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 export const Header = () => {
   const { currentUser } = useSelector((state) => state.user);
-  console.log(currentUser);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -34,7 +33,6 @@ export const Header = () => {
       time: "2 hours ago",
     },
   ]);
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -45,7 +43,6 @@ export const Header = () => {
 
   const navLinks = [
     { name: "Home", href: "/" },
-    { name: "Find Equb", href: "/find" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];

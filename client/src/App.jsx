@@ -9,6 +9,7 @@ import { AdminDashboard } from './pages/Dashboard/AdminDashboard'
 import {About} from './pages/Home/About'
 import Contact from './pages/Home/Contact'
 import { FindEqub } from './components/FindEqub'
+import SearchBar from './components/SearchBar'
 // import MyEqubs from './pages/Dashboard/MyEqub'
 
 
@@ -26,6 +27,7 @@ function App() {
         <Route path="/find" element={<FindEqub/>} />
         <Route path="/contact" element={<Contact/>} />
         <Route path="/admin" element={<AdminDashboard/>} />
+        <Route path="/search" element={<SearchBar/>} />
         
       </Routes>
     </BrowserRouter>

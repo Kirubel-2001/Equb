@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import {
@@ -14,7 +14,7 @@ import { Link, Navigate } from "react-router-dom";
 import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { signInFailure, signInStart, signInSuccess } from "../../redux/User/userSlice";
 // SignIn Page Component
 export const Signin = () => {
@@ -26,7 +26,9 @@ export const Signin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  // const { loading, error } = useSelector((state) => state.user);  
+  const currentUser = useSelector((state) => state.user.currentUser);  
+  console.log("User Data:", currentUser); // Debugging
+  console.log("User Role:", currentUser?.user?.role);
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
@@ -79,6 +81,16 @@ export const Signin = () => {
     }
   };
 
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser?.user?.role === "Admin") {
+        navigate("/admin");
+      } else {
+        navigate("/participant");
+      }
+    }
+  }, [currentUser, navigate]);
+  
   return (
     <div>
       <Header />
@@ -229,7 +241,7 @@ export const Signin = () => {
                 </div>
 
                 <div>
-                  <motion.button
+                 <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     type="submit"
@@ -265,7 +277,7 @@ export const Signin = () => {
                     ) : (
                       "Sign in"
                     )}
-                  </motion.button>
+                  </motion.button> :
                 </div>
               </div>
             </form>
