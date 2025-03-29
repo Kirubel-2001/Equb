@@ -22,6 +22,7 @@ import {
   PanelLeft,
   PanelLeftClose
 } from "lucide-react";
+import Profile from "../../components/Profile";
 
 export const AdminDashboard = () => {
   // State for active tab
@@ -275,76 +276,7 @@ export const AdminDashboard = () => {
                 />
               </div>
               
-              <div className="relative">
-                <button 
-                  className="relative"
-                  onClick={() => setShowNotifications(!showNotifications)}
-                >
-                  <Bell className="h-6 w-6 text-gray-500 hover:text-indigo-600 cursor-pointer" />
-                  {notifications.length > 0 && (
-                    <div className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                      {notifications.length}
-                    </div>
-                  )}
-                </button>
-                
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-20 overflow-hidden">
-                    <div className="py-2 px-4 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white font-semibold flex items-center justify-between">
-                      <span>Notifications</span>
-                      <X 
-                        className="h-4 w-4 cursor-pointer hover:text-gray-200" 
-                        onClick={() => setShowNotifications(false)} 
-                      />
-                    </div>
-                    <div className="max-h-80 overflow-y-auto">
-                      {notifications.map(notification => (
-                        <div 
-                          key={notification.id} 
-                          className="py-3 px-4 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors"
-                        >
-                          <p className="text-sm font-medium text-gray-800">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
-                        </div>
-                      ))}
-                    </div>
-                    {notifications.length === 0 && (
-                      <div className="py-4 text-center text-gray-500">
-                        No new notifications
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <div className="relative">
-                <div 
-                  className="flex items-center space-x-2 cursor-pointer"
-                  onClick={() => setShowDropdown(!showDropdown)}
-                >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-semibold">
-                    A
-                  </div>
-                  <div className="text-sm font-medium text-gray-700">Admin</div>
-                </div>
-                
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-20 py-2">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-semibold">Admin</p>
-                      <p className="text-xs text-gray-500">admin@equb.com</p>
-                    </div>
-                    <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer flex items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      Profile
-                    </div>
-                    <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer flex items-center">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </div>
-                  </div>
-                )}
-              </div>
+              <Profile/>
             </div>
           </div>
         </header>

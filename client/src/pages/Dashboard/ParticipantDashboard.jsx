@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import EqubCard from "../../components/EqubCard";
+import Profile from "../../components/Profile";
 
 export const ParticipantDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -282,22 +283,13 @@ export const ParticipantDashboard = () => {
           isSidebarOpen ? "ml-60" : "ml-20"
         } flex-1`}
       >
-        <header className="bg-white shadow-sm sticky top-0 z-10 p-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-          </div>
+       <header className="bg-white shadow-sm sticky top-0 z-10 p-4 flex justify-between items-center">
+  <div className="flex items-center">
+    <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+  </div>
 
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Bell className="h-6 w-6 text-gray-500 hover:text-blue-600 cursor-pointer" />
-              {notificationsCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {notificationsCount}
-                </span>
-              )}
-            </div>
-          </div>
-        </header>
+  <Profile/>
+</header>
 
         <main className="px-6 py-8">
 

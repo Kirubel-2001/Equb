@@ -1,7 +1,7 @@
 import {BrowserRouter, Routes, Route} from 'react-router-dom'
 import {Signin} from './pages/Home/Signin'
 import Home from './pages/Home/Home'
-import Profile from './pages/Home/Profile'
+import Profile from './components/Profile'
 import {SignUp} from './pages/Home/SignUp'
 import { Header } from './components/Header'
 import { ParticipantDashboard } from './pages/Dashboard/ParticipantDashboard'

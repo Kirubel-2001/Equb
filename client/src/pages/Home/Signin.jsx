@@ -27,8 +27,6 @@ export const Signin = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const currentUser = useSelector((state) => state.user.currentUser);  
-  console.log("User Data:", currentUser); // Debugging
-  console.log("User Role:", currentUser?.user?.role);
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
