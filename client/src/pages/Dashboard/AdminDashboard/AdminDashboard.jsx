@@ -22,7 +22,7 @@ import {
   PanelLeft,
   PanelLeftClose
 } from "lucide-react";
-import Profile from "../../components/Profile";
+import Profile from "../../../components/Profile";
 
 export const AdminDashboard = () => {
   // State for active tab

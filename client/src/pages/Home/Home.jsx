@@ -12,9 +12,12 @@ import { motion } from "framer-motion";
 import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
 import SearchBar from "../../components/SearchBar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const Home = () => {
+  const { currentUser } = useSelector((state) => state.user);
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar Section */}
@@ -37,24 +40,33 @@ const Home = () => {
               and achieve your financial goals together.
             </p>
             <div className="mt-10 flex justify-center gap-3">
-              <Link
-                to="/signup">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="rounded-md bg-white px-6 py-3 text-base font-medium text-indigo-600 shadow-sm hover:bg-indigo-50"
+                onClick={() => {
+                  if (currentUser) {
+                    const userRole = currentUser?.user?.role; // Normalize role to lowercase
+                    if (userRole === "Admin") {
+                      navigate("/admin");
+                    } else if (userRole === "Participant") {
+                      navigate("/participant");
+                    }
+                  } else {
+                    navigate("/signup");
+                  }
+                }}
               >
                 Get Started
               </motion.button>
-              </Link>
               <Link to="/about">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="rounded-md bg-indigo-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-400"
-              >
-                Learn More
-              </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="rounded-md bg-indigo-500 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-400"
+                >
+                  Learn More
+                </motion.button>
               </Link>
             </div>
           </motion.div>

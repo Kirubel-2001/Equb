@@ -15,7 +15,11 @@ import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { signInFailure, signInStart, signInSuccess } from "../../redux/User/userSlice";
+import {
+  signInFailure,
+  signInStart,
+  signInSuccess,
+} from "../../redux/User/userSlice";
 // SignIn Page Component
 export const Signin = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +30,7 @@ export const Signin = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const currentUser = useSelector((state) => state.user.currentUser);  
+  const currentUser = useSelector((state) => state.user.currentUser);
   const handleSignIn = async (e) => {
     e.preventDefault();
     setError("");
@@ -64,13 +68,6 @@ export const Signin = () => {
       } else {
         localStorage.removeItem("rememberedEmail");
       }
-
-      // Redirect based on user role
-      if (data.user.role === "Admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err.message || "Invalid email or password. Please try again.");
@@ -78,17 +75,17 @@ export const Signin = () => {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     if (currentUser) {
       if (currentUser?.user?.role === "Admin") {
         navigate("/admin");
-      } else {
+      } else if (currentUser?.user?.role === "Participant"){
         navigate("/participant");
       }
     }
   }, [currentUser, navigate]);
-  
+
+
   return (
     <div>
       <Header />
@@ -239,7 +236,7 @@ export const Signin = () => {
                 </div>
 
                 <div>
-                 <motion.button
+                  <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     type="submit"
@@ -275,7 +272,8 @@ export const Signin = () => {
                     ) : (
                       "Sign in"
                     )}
-                  </motion.button> :
+                  </motion.button>{" "}
+                  :
                 </div>
               </div>
             </form>

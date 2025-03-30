@@ -22,8 +22,8 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import EqubCard from "../../components/EqubCard";
-import Profile from "../../components/Profile";
+import EqubCard from "../../../components/EqubCard";
+import Profile from "../../../components/Profile";
 
 export const ParticipantDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -135,9 +135,7 @@ export const ParticipantDashboard = () => {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 flex"
-    >
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 flex">
       {/* Sidebar */}
       <motion.div
         initial={{ width: isSidebarOpen ? 240 : 72 }}
@@ -262,18 +260,6 @@ export const ParticipantDashboard = () => {
               </li>
             </ul>
           </div>
-
-          <div className="p-4 border-t">
-            <a
-              href="#"
-              className={`flex items-center ${
-                isSidebarOpen ? "px-4" : "justify-center px-2"
-              } py-3 text-red-500 hover:bg-red-50 rounded-lg transition`}
-            >
-              <LogOut className="h-5 w-5 flex-shrink-0" />
-              {isSidebarOpen && <span className="ml-3">Log Out</span>}
-            </a>
-          </div>
         </div>
       </motion.div>
 
@@ -283,16 +269,15 @@ export const ParticipantDashboard = () => {
           isSidebarOpen ? "ml-60" : "ml-20"
         } flex-1`}
       >
-       <header className="bg-white shadow-sm sticky top-0 z-10 p-4 flex justify-between items-center">
-  <div className="flex items-center">
-    <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
-  </div>
+        <header className="bg-white shadow-sm sticky top-0 z-10 p-4 flex justify-between items-center">
+          <div className="flex items-center">
+            <h1 className="text-xl font-bold text-gray-800">Dashboard</h1>
+          </div>
 
-  <Profile/>
-</header>
+          <Profile />
+        </header>
 
         <main className="px-6 py-8">
-
           {/* Welcome Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
