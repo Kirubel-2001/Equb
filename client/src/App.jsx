@@ -13,6 +13,8 @@ import SearchBar from "./components/SearchBar";
 import { MyEqubs } from "./pages/Dashboard/ParticipantDashboard/MyEqubs";
 import { SideBar } from "./components/ParticipantComponent/SideBar";
 import PrivateRoute from "./components/PrivateRoute";
+import { Dashboard } from "./pages/Dashboard/ParticipantDashboard/Dashboard";
+import { DashboardHeader } from "./components/DashboardHeader";
 // import MyEqubs from './pages/Dashboard/MyEqub'
 
 function App() {
@@ -28,6 +30,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/search" element={<SearchBar />} />
         <Route path="/sidebar" element={<SideBar />} />
+        <Route path="/dashboard-header" element={<DashboardHeader />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
@@ -41,6 +44,7 @@ function App() {
         {/* Participant-only route */}
         <Route element={<PrivateRoute allowedRoles={["Participant"]} />}>
           <Route path="/participant" element={<ParticipantDashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>
     </BrowserRouter>
