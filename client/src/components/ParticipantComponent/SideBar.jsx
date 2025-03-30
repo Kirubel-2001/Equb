@@ -2,18 +2,9 @@ import React, { useState } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import {
-  Search,
-  MapPin,
-  UserPlus,
-  Clock,
-  PlusCircle,
-  Filter,
-  Users,
-  DollarSign,
   Bell,
   Menu,
   User,
-  LogOut,
   Home,
   Grid,
   PlusSquare,
@@ -23,7 +14,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const SideBar = () => {
+export const SideBar = ({ onToggle }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   /* eslint-disable-next-line no-unused-vars */
   const [notificationsCount, setNotificationsCount] = useState(3);
@@ -34,6 +25,7 @@ export const SideBar = () => {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+    onToggle(!isSidebarOpen);
   };
 
   return (
