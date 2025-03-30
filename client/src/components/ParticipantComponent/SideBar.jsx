@@ -14,18 +14,27 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const SideBar = ({ onToggle }) => {
+export const SideBar = ({ onDashboardToggle, onMyEqubsToggle, onToggle }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   /* eslint-disable-next-line no-unused-vars */
   const [notificationsCount, setNotificationsCount] = useState(3);
-
-
-
-  
+  const [activeItem, setActiveItem] = useState("dashboard"); // Track active sidebar item
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
     onToggle(!isSidebarOpen);
+  };
+
+  const handleItemClick = (item) => {
+    setActiveItem(item);
+    if (item === "dashboard") {
+      onDashboardToggle(true);
+      onMyEqubsToggle(false);
+    } else if (item === "myEqubs") {
+      onDashboardToggle(false);
+      onMyEqubsToggle(true);
+    }
+    // Add other sections as needed
   };
 
   return (
@@ -42,9 +51,7 @@ export const SideBar = ({ onToggle }) => {
             {isSidebarOpen ? (
               <>
                 <Link to="/">
-                  <h2 className="text-xl font-bold text-blue-600">
-                    Equb System
-                  </h2>
+                  <h2 className="text-xl font-bold text-blue-600">Equb</h2>
                 </Link>
                 <button
                   onClick={toggleSidebar}
@@ -81,45 +88,46 @@ export const SideBar = ({ onToggle }) => {
 
           <div className="flex-1 py-4">
             <ul className="space-y-1">
-              <li>
+              <li onClick={() => handleItemClick("dashboard")}>
                 <a
                   href="#"
                   className={`flex items-center ${
                     isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-blue-700 bg-blue-50 rounded-lg mx-2 font-medium`}
+                  } py-3 rounded-lg mx-2 ${
+                    activeItem === "dashboard" 
+                      ? "text-blue-700 bg-blue-50 font-medium" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  } transition`}
                 >
                   <Home className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Dashboard</span>}
                 </a>
               </li>
-              <li>
+              <li onClick={() => handleItemClick("myEqubs")}>
                 <a
                   href="#"
                   className={`flex items-center ${
                     isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                  } py-3 rounded-lg mx-2 ${
+                    activeItem === "myEqubs" 
+                      ? "text-blue-700 bg-blue-50 font-medium" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  } transition`}
                 >
                   <Grid className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">My Equbs</span>}
                 </a>
               </li>
-              <li>
+              <li onClick={() => handleItemClick("notifications")}>
                 <a
                   href="#"
                   className={`flex items-center ${
                     isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
-                >
-                  <PlusSquare className="h-5 w-5 flex-shrink-0" />
-                  {isSidebarOpen && <span className="ml-3">Create Equb</span>}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className={`flex items-center ${
-                    isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition relative`}
+                  } py-3 rounded-lg mx-2 ${
+                    activeItem === "notifications" 
+                      ? "text-blue-700 bg-blue-50 font-medium" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  } transition relative`}
                 >
                   <Bell className="h-5 w-5 flex-shrink-0" />
                   {notificationsCount > 0 && (
@@ -130,23 +138,31 @@ export const SideBar = ({ onToggle }) => {
                   {isSidebarOpen && <span className="ml-3">Notifications</span>}
                 </a>
               </li>
-              <li>
+              <li onClick={() => handleItemClick("help")}>
                 <a
                   href="#"
                   className={`flex items-center ${
                     isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                  } py-3 rounded-lg mx-2 ${
+                    activeItem === "help" 
+                      ? "text-blue-700 bg-blue-50 font-medium" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  } transition`}
                 >
                   <HelpCircle className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Help</span>}
                 </a>
               </li>
-              <li>
+              <li onClick={() => handleItemClick("settings")}>
                 <a
                   href="#"
                   className={`flex items-center ${
                     isSidebarOpen ? "px-4" : "justify-center px-2"
-                  } py-3 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 transition`}
+                  } py-3 rounded-lg mx-2 ${
+                    activeItem === "settings" 
+                      ? "text-blue-700 bg-blue-50 font-medium" 
+                      : "text-gray-600 hover:bg-gray-100"
+                  } transition`}
                 >
                   <Settings className="h-5 w-5 flex-shrink-0" />
                   {isSidebarOpen && <span className="ml-3">Settings</span>}
@@ -156,8 +172,6 @@ export const SideBar = ({ onToggle }) => {
           </div>
         </div>
       </motion.div>
-
-      
     </div>
   );
 };
