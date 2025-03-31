@@ -15,6 +15,7 @@ import { SideBar } from "./components/ParticipantComponent/SideBar";
 import PrivateRoute from "./components/PrivateRoute";
 import { Dashboard } from "./pages/Dashboard/ParticipantDashboard/Dashboard";
 import { DashboardHeader } from "./components/DashboardHeader";
+import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
 // import MyEqubs from './pages/Dashboard/MyEqub'
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={["Participant"]} />}>
           <Route path="/participant" element={<ParticipantDashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/create" element={<CreateEqub />} />
         </Route>
       </Routes>
     </BrowserRouter>

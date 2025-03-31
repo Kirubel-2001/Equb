@@ -1,11 +1,10 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const EqubSchema = new mongoose.Schema(
+const equbSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
     location: {
@@ -14,7 +13,7 @@ const EqubSchema = new mongoose.Schema(
     },
     creator: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Refers to the Users collection
+      ref: "User", 
       required: true,
     },
     numberOfParticipants: {
@@ -34,16 +33,19 @@ const EqubSchema = new mongoose.Schema(
     },
     equbType: {
       type: String,
-      enum: ["Automatic Lottery", "Special Case Lottery"],
+      enum: ["Automatic", "Special"],
       required: true,
     },
     status: {
       type: String,
-      enum: ["Active", "Completed"],
-      default: "Active",
+      enum: ["Active", "Pending"],
+      default: "Pending",
     },
+    description: { 
+      type: String
+     },
   },
   { timestamps: true }
 );
-const Equb = mongoose.model("Equb", EqubSchema);
+const Equb = mongoose.model("Equb", equbSchema);
 export default Equb;

@@ -1,7 +1,7 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import User from '../models/user.model.js';
-import { errorHandler } from '../utils/error.js';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import { errorHandler } from "../utils/error.js";
 
 // Signup
 export const signup = async (req, res, next) => {
@@ -11,9 +11,9 @@ export const signup = async (req, res, next) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'User with this email already exists' 
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists",
       });
     }
 
@@ -27,7 +27,7 @@ export const signup = async (req, res, next) => {
       lastName,
       email,
       password: hashedPassword,
-      phone
+      phone,
     });
 
     // Save user to database
@@ -37,73 +37,75 @@ export const signup = async (req, res, next) => {
     const token = jwt.sign(
       { userId: newUser._id, email: newUser.email, role: newUser.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: "1d" }
     );
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: "User registered successfully",
       token,
       user: {
         id: newUser._id,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
         email: newUser.email,
-        role: newUser.role
-      }
+        role: newUser.role,
+      },
     });
   } catch (error) {
     next(error);
-    errorHandler(500, 'Server error during registration');
+    errorHandler(500, "Server error during registration");
   }
-}
+};
 // Signin
 export const signin = async (req, res, next) => {
-
   try {
     const { email, password } = req.body;
 
     // Validate input
     if (!email || !password) {
-      return res.status(400).json({ error: 'Please provide email and password' });
+      return res
+        .status(400)
+        .json({ error: "Please provide email and password" });
     }
 
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ error: "Invalid email or password" });
     }
 
     // Generate JWT token
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "24h",
+    });
 
-    res.json({
+    res
+    .cookie("access_token", token, { httpOnly: true })
+    .status(200)
+    .json({
       user: {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
-        role: user.role
+        role: user.role,
       },
-      token
+      token,
     });
-
+    
   } catch (error) {
     next(error);
-    errorHandler(500, 'Server error during signin');
+    errorHandler(500, "Server error during signin");
   }
-}
+};
 // signout
 export const signout = async (req, res, next) => {
   try {

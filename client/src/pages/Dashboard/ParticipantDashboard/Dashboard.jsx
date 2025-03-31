@@ -12,6 +12,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import EqubCard from "../../../components/EqubCard";
+import { CreateEqub } from "../../../components/ParticipantComponent/CreateEqub";
 
 export const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +20,7 @@ export const Dashboard = () => {
   const [activeCategory, setActiveCategory] = useState("all");
   const [equbs, setEqubs] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
   // Simulated data for demo
   useEffect(() => {
@@ -202,13 +204,17 @@ export const Dashboard = () => {
               )}
             </div>
 
-            <button className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm font-medium">
+            <button
+              className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm font-medium"
+              onClick={() => setShowPopup(true)}
+            >
               <PlusCircle className="h-5 w-5" />
               <span>Create Equb</span>
             </button>
           </div>
         </motion.div>
-
+        {/*Create Equb Popup */}
+        <CreateEqub isOpen={showPopup} onClose={() => setShowPopup(false)} />
         {/* Popular Equbs Section */}
 
         {!isTyping && <EqubCard />}
