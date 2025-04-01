@@ -11,8 +11,8 @@ import {
   Users,
   DollarSign,
 } from "lucide-react";
-import EqubCard from "../../../components/EqubCard";
 import { CreateEqub } from "../../../components/ParticipantComponent/CreateEqub";
+import PopularEqubs from "../../../components/PopularEqubs";
 
 export const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -217,7 +217,7 @@ export const Dashboard = () => {
         <CreateEqub isOpen={showPopup} onClose={() => setShowPopup(false)} />
         {/* Popular Equbs Section */}
 
-        {!isTyping && <EqubCard />}
+        {!isTyping && <PopularEqubs />}
 
         {/* All Equbs Section */}
         <motion.section

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
-export default function EqubCard() {
+export default function PopularEqubs() {
   const [activeEqubs, setActiveEqubs] = useState([]);
   console.log(activeEqubs);
 

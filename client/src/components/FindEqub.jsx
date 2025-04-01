@@ -11,7 +11,7 @@ import {
   Users,
   DollarSign,
 } from "lucide-react";
-import EqubCard from "./EqubCard";
+import PopularEqubs from "./PopularEqubs";
 
 export const FindEqub = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -202,8 +202,8 @@ export const FindEqub = () => {
           </motion.div>
 
           {/* Popular Equbs Section */}
-
-          {!isTyping && <EqubCard />}
+          {!isTyping && <PopularEqubs />}
+          
           {/* All Equbs Section */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
