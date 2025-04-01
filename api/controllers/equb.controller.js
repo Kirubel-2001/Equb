@@ -1,5 +1,6 @@
 import Equb from "../models/equb.model.js";
 
+
 // Create a new Equb
 export const createEqub = async (req, res, next) => {
   try {
@@ -54,3 +55,4 @@ export const getEqubs = async (req, res, next) => {
     res.status(500).send("Server error");
   }
 };
+
