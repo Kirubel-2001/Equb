@@ -1,41 +1,28 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 
 export default function EqubCard() {
-  const [activeEqubs] = useState([
-    {
-      id: 1,
-      name: "Weekly Savings Group",
-      members: 12,
-      amount: 1000,
-      cycle: "Weekly",
-      location: "Addis Ababa",
-      spotsLeft: 3,
-      progress: 75,
-    },
-    {
-      id: 2,
-      name: "Monthly Business Equb",
-      members: 20,
-      amount: 5000,
-      cycle: "Monthly",
-      location: "Bahir Dar",
-      spotsLeft: 5,
-      progress: 45,
-    },
-    {
-      id: 3,
-      name: "Quarter Investment Group",
-      members: 15,
-      amount: 10000,
-      cycle: "Quarterly",
-      location: "Hawassa",
-      spotsLeft: 2,
-      progress: 90,
-    },
-  ]);
+  const [activeEqubs, setActiveEqubs] = useState([]);
+  console.log(activeEqubs);
+
+  useEffect(() => {
+    const fetchEqubs = async () => {
+      try {
+        const response = await fetch("/api/equb/get-equbs");
+        if (!response.ok) {
+          throw new Error("Failed to fetch Equbs");
+        }
+        const data = await response.json();
+        setActiveEqubs(data); // Update state with fetched data
+      } catch (error) {
+        console.error("Error fetching Equbs:", error.message);
+      }
+    };
+
+    fetchEqubs();
+  }, []);
   return (
     <div className=" bg-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,7 +47,7 @@ export default function EqubCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {activeEqubs.map((equb, index) => (
             <motion.div
-              key={equb.id}
+              key={equb._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -82,11 +69,15 @@ export default function EqubCard() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Members:</span>
-                    <span className="font-medium">{equb.members}</span>
+                    <span className="font-medium">
+                      {equb.numberOfParticipants}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Amount:</span>
-                    <span className="font-medium">{equb.amount} ETB</span>
+                    <span className="font-medium">
+                      {equb.amountPerPerson} ETB
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Cycle:</span>
@@ -97,12 +88,14 @@ export default function EqubCard() {
                   <div className="mt-4">
                     <div className="flex justify-between text-sm mb-1">
                       <span className="text-gray-600">Progress</span>
-                      <span className="font-medium">{equb.progress}%</span>
+                      <span className="font-medium">
+                        {equb.numberOfParticipants - 2}%
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
                         className="bg-indigo-600 h-2 rounded-full"
-                        style={{ width: `${equb.progress}%` }}
+                        style={{ width: `${equb.numberOfParticipants - 1}%` }}
                       />
                     </div>
                   </div>

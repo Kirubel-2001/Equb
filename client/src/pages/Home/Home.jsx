@@ -57,7 +57,7 @@ const Home = () => {
                   }
                 }}
               >
-                Get Started
+                {currentUser ? "Go to Dashboard" : "Get Started"}
               </motion.button>
               <Link to="/about">
                 <motion.button

@@ -67,9 +67,8 @@ export const CreateEqub = ({ isOpen, onClose }) => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({formData,
-            userRef: currentUser.user.id,}), // Sending the formData as a JSON string
-    });
+        body: JSON.stringify({ formData, userRef: currentUser.user.id }), // Sending the formData as a JSON string
+      });
 
       if (response.ok) {
         // Handle successful submission
