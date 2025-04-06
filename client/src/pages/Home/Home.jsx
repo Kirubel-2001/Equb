@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Users,
   Calendar,
@@ -14,10 +14,18 @@ import Footer from "../../components/Footer";
 import SearchBar from "../../components/SearchBar";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { AllEqubs } from "../../components/ParticipantComponent/AllEqubs";
 
 const Home = () => {
   const { currentUser } = useSelector((state) => state.user);
+  /* eslint-disable-next-line no-unused-vars */
+  const [showPopup, setShowPopup] = useState(false);
+  /* eslint-disable-next-line no-unused-vars */
+  const [amountFilter, setAmountFilter] = useState({ min: "", max: "" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState("all");
   const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar Section */}
@@ -46,7 +54,7 @@ const Home = () => {
                 className="rounded-md bg-white px-6 py-3 text-base font-medium text-indigo-600 shadow-sm hover:bg-indigo-50"
                 onClick={() => {
                   if (currentUser) {
-                    const userRole = currentUser?.user?.role; // Normalize role to lowercase
+                    const userRole = currentUser?.user?.role;
                     if (userRole === "Admin") {
                       navigate("/admin");
                     } else if (userRole === "Participant") {
@@ -89,8 +97,25 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {/* Search Bar */}
-      <SearchBar />
+
+      {/* Search Bar - passing state and setter functions */}
+      <SearchBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+      />
+
+      {/* AllEqubs Component - passing down all required props */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <AllEqubs
+          searchTerm={searchTerm}
+          activeCategory={activeCategory}
+          amountFilter={amountFilter}
+          setShowPopup={setShowPopup}
+        />
+      </div>
+
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div

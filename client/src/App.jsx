@@ -16,6 +16,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import { Dashboard } from "./pages/Dashboard/ParticipantDashboard/Dashboard";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
+import { AllEqubs } from "./components/ParticipantComponent/AllEqubs";
 // import MyEqubs from './pages/Dashboard/MyEqub'
 
 function App() {
@@ -32,6 +33,8 @@ function App() {
         <Route path="/search" element={<SearchBar />} />
         <Route path="/sidebar" element={<SideBar />} />
         <Route path="/dashboard-header" element={<DashboardHeader />} />
+        <Route path="/all-equbs" element={<AllEqubs />} />
+
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
