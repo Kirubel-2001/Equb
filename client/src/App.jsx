@@ -12,7 +12,6 @@ import SearchBar from "./components/SearchBar";
 import { MyEqubs } from "./pages/Dashboard/ParticipantDashboard/MyEqubs";
 import { SideBar } from "./components/ParticipantComponent/SideBar";
 import PrivateRoute from "./components/PrivateRoute";
-import { Dashboard } from "./pages/Dashboard/ParticipantDashboard/Dashboard";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
 import { AllEqubs } from "./components/ParticipantComponent/AllEqubs";
@@ -44,7 +43,6 @@ function App() {
         {/* Participant-only route */}
         <Route element={<PrivateRoute allowedRoles={["Participant"]} />}>
           <Route path="/participant" element={<ParticipantDashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/create" element={<CreateEqub />} />
         </Route>
       </Routes>
