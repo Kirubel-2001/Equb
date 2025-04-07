@@ -15,6 +15,7 @@ import SearchBar from "../../components/SearchBar";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AllEqubs } from "../../components/ParticipantComponent/AllEqubs";
+import PopularEqubs from "../../components/PopularEqubs";
 
 const Home = () => {
   const { currentUser } = useSelector((state) => state.user);
@@ -105,9 +106,15 @@ const Home = () => {
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
       />
+      {/* Popular Equbs Section */}
+      <PopularEqubs
+        searchTerm={searchTerm}
+        activeCategory={activeCategory}
+        amountFilter={amountFilter}
+      />
 
       {/* AllEqubs Component - passing down all required props */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AllEqubs
           searchTerm={searchTerm}
           activeCategory={activeCategory}

@@ -3,12 +3,17 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight, UserPlus, X } from "lucide-react";
 
-export default function PopularEqubs() {
+export default function PopularEqubs({
+  searchTerm,
+  activeCategory,
+  amountFilter,
+  locationFilter,
+}) {
   const [activeEqubs, setActiveEqubs] = useState([]);
   const [visibleCount, setVisibleCount] = useState(3);
   const [joinStatus, setJoinStatus] = useState({});
   const [loadingMap, setLoadingMap] = useState({});
-  
+
   useEffect(() => {
     const fetchEqubsAndStatus = async () => {
       try {
@@ -18,7 +23,7 @@ export default function PopularEqubs() {
         }
         const equbsData = await response.json();
         setActiveEqubs(equbsData);
-        
+
         // Fetch join status for each equb
         const statusObj = {};
         for (const equb of equbsData) {
@@ -226,9 +231,36 @@ export default function PopularEqubs() {
     );
   };
 
-  // Display only the first `visibleCount` Equbs
-  const displayedEqubs = activeEqubs.slice(0, visibleCount);
-  
+  // Filter equbs based on search term, category, and amount filter - same as AllEqubs
+  const filteredEqubs = activeEqubs.filter((equb) => {
+    // Filter by status category
+    if (activeCategory !== "all" && equb.status !== activeCategory)
+      return false;
+
+    // Filter by amount range
+    if (amountFilter.min && equb.amountPerPerson < Number(amountFilter.min))
+      return false;
+    if (amountFilter.max && equb.amountPerPerson > Number(amountFilter.max))
+      return false;
+
+    // Filter by location
+    if (
+      locationFilter &&
+      !equb.location.toLowerCase().includes(locationFilter.toLowerCase())
+    )
+      return false;
+
+    // Filter by search term (name, location, or amount)
+    return (
+      equb.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equb.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      equb.amountPerPerson.toString().includes(searchTerm)
+    );
+  });
+
+  // Display only the first visibleCount filtered Equbs
+  const displayedEqubs = filteredEqubs.slice(0, visibleCount);
+
   return (
     <div className="bg-white py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -244,91 +276,100 @@ export default function PopularEqubs() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayedEqubs.map((equb, index) => (
-            <motion.div
-              key={equb._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {equb.name}
-                    </h3>
-                    <p className="text-gray-600">{equb.location}</p>
-                  </div>
-                  <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                    {equb.spotsLeft} spots left
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Members:</span>
-                    <span className="font-medium">
-                      {equb.numberOfParticipants}
+          {displayedEqubs.length > 0 ? (
+            displayedEqubs.map((equb, index) => (
+              <motion.div
+                key={equb._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900">
+                        {equb.name}
+                      </h3>
+                      <p className="text-gray-600">{equb.location}</p>
+                    </div>
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {equb.spotsLeft} spots left
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Amount:</span>
-                    <span className="font-medium">
-                      {equb.amountPerPerson} ETB
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Cycle:</span>
-                    <span className="font-medium">{equb.cycle}</span>
-                  </div>
 
-                  {/* Progress bar */}
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">Progress</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Members:</span>
                       <span className="font-medium">
-                        {equb.numberOfParticipants - 2}%
+                        {equb.numberOfParticipants}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-indigo-600 h-2 rounded-full"
-                        style={{ width: `${equb.numberOfParticipants - 1}%` }}
-                      />
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Amount:</span>
+                      <span className="font-medium">
+                        {equb.amountPerPerson} ETB
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Cycle:</span>
+                      <span className="font-medium">{equb.cycle}</span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-4">
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-600">Progress</span>
+                        <span className="font-medium">
+                          {equb.numberOfParticipants - 2}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-indigo-600 h-2 rounded-full"
+                          style={{ width: `${equb.numberOfParticipants - 1}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  {joinStatus[equb._id]?.message && (
+                    <div
+                      className={`mt-2 text-sm text-center ${
+                        joinStatus[equb._id]?.status === "Error" ||
+                        joinStatus[equb._id]?.status === "Rejected"
+                          ? "text-red-600"
+                          : joinStatus[equb._id]?.status === "Pending"
+                          ? "text-yellow-600"
+                          : "text-green-600"
+                      }`}
+                    >
+                      {joinStatus[equb._id]?.message}
+                    </div>
+                  )}
+
+                  {renderActionButtons(equb._id)}
                 </div>
-
-                {joinStatus[equb._id]?.message && (
-                  <div
-                    className={`mt-2 text-sm text-center ${
-                      joinStatus[equb._id]?.status === "Error" ||
-                      joinStatus[equb._id]?.status === "Rejected"
-                        ? "text-red-600"
-                        : joinStatus[equb._id]?.status === "Pending"
-                        ? "text-yellow-600"
-                        : "text-green-600"
-                    }`}
-                  >
-                    {joinStatus[equb._id]?.message}
-                  </div>
-                )}
-
-                {renderActionButtons(equb._id)}
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-8">
+              <p className="text-gray-500">
+                No popular Equbs found matching your criteria.
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex justify-end pt-7">
-          {activeEqubs.length > 3 && (
+          {filteredEqubs.length > 3 && (
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="text-indigo-600 hover:text-indigo-500 flex items-center"
               onClick={() => setVisibleCount(visibleCount === 3 ? 9 : 3)}
             >
-              {visibleCount === 3 ? "View More" : "Show Less"} <ChevronRight className="w-4 h-4 ml-1" />
+              {visibleCount === 3 ? "View More" : "Show Less"}{" "}
+              <ChevronRight className="w-4 h-4 ml-1" />
             </motion.button>
           )}
         </div>

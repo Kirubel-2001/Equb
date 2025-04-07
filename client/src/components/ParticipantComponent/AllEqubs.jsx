@@ -17,6 +17,7 @@ export const AllEqubs = ({
   activeCategory,
   amountFilter,
   setShowPopup,
+  locationFilter,
 }) => {
   const [equbs, setEqubs] = useState([]);
   const [joinStatus, setJoinStatus] = useState({});
@@ -196,7 +197,12 @@ export const AllEqubs = ({
       return false;
     if (amountFilter.max && equb.amountPerPerson > Number(amountFilter.max))
       return false;
-
+    // Filter by location
+    if (
+      locationFilter &&
+      !equb.location.toLowerCase().includes(locationFilter.toLowerCase())
+    )
+      return false;
     // Filter by search term (name, location, or amount)
     return (
       equb.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

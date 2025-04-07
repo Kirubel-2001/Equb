@@ -8,7 +8,6 @@ import { ParticipantDashboard } from "./pages/Dashboard/ParticipantDashboard/Par
 import { AdminDashboard } from "./pages/Dashboard/AdminDashboard/AdminDashboard";
 import { About } from "./pages/Home/About";
 import Contact from "./pages/Home/Contact";
-import { FindEqub } from "./components/FindEqub";
 import SearchBar from "./components/SearchBar";
 import { MyEqubs } from "./pages/Dashboard/ParticipantDashboard/MyEqubs";
 import { SideBar } from "./components/ParticipantComponent/SideBar";
@@ -17,7 +16,6 @@ import { Dashboard } from "./pages/Dashboard/ParticipantDashboard/Dashboard";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
 import { AllEqubs } from "./components/ParticipantComponent/AllEqubs";
-// import MyEqubs from './pages/Dashboard/MyEqub'
 
 function App() {
   return (
@@ -28,13 +26,11 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/header" element={<Header />} />
         <Route path="/about" element={<About />} />
-        <Route path="/find" element={<FindEqub />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/search" element={<SearchBar />} />
         <Route path="/sidebar" element={<SideBar />} />
         <Route path="/dashboard-header" element={<DashboardHeader />} />
         <Route path="/all-equbs" element={<AllEqubs />} />
-
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />

@@ -1,7 +1,6 @@
 import React from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
-import PopularEqubs from "./PopularEqubs";
 
 export default function SearchBar({
   searchTerm,
@@ -9,8 +8,6 @@ export default function SearchBar({
   activeCategory,
   setActiveCategory,
 }) {
-  const [isTyping, setIsTyping] = React.useState(false);
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
       <motion.div
@@ -27,7 +24,6 @@ export default function SearchBar({
               className="w-full text-gray-700 text-lg focus:outline-none"
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setIsTyping(e.target.value.length > 0);
               }}
               value={searchTerm}
             />
@@ -48,9 +44,6 @@ export default function SearchBar({
           </div>
         </div>
       </motion.div>
-
-      {/* Popular Equbs Section - show only when not typing */}
-      {!isTyping && <PopularEqubs />}
     </div>
   );
 }
