@@ -15,10 +15,16 @@ import {
   X,
   Search,
   ChevronDown,
+  Edit,
 } from "lucide-react";
 import { useSelector } from "react-redux";
 
-export const CreateEqub = ({ isOpen, onClose }) => {
+export const CreateEqub = ({
+  isOpen,
+  onClose,
+  initialData = null,
+  isEditing = false,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -28,10 +34,14 @@ export const CreateEqub = ({ isOpen, onClose }) => {
     equbType: "Automatic",
     description: "",
   });
+
   const { currentUser } = useSelector((state) => state.user);
   const [locationSearch, setLocationSearch] = useState("");
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   const locationRef = useRef(null);
+
   // Sample locations - replace with your actual locations
   const locations = [
     "Addis Ababa, Ethiopia",
@@ -50,37 +60,112 @@ export const CreateEqub = ({ isOpen, onClose }) => {
     location.toLowerCase().includes(locationSearch.toLowerCase())
   );
 
+  // Initialize form with data if editing
+  useEffect(() => {
+    if (isEditing && initialData) {
+      setFormData({
+        name: initialData.name || "",
+        location: initialData.location || "",
+        numberOfParticipants: initialData.numberOfParticipants || "",
+        amountPerPerson: initialData.amountPerPerson || "",
+        cycle: initialData.cycle || "Weekly",
+        equbType: initialData.equbType || "Automatic",
+        description: initialData.description || "",
+      });
+    } else {
+      // Reset form if not editing
+      setFormData({
+        name: "",
+        location: "",
+        numberOfParticipants: "",
+        amountPerPerson: "",
+        cycle: "Weekly",
+        equbType: "Automatic",
+        description: "",
+      });
+    }
+  }, [isEditing, initialData, isOpen]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value,
     });
+
+    // Clear error when field is modified
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: "",
+      });
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Equb name is required";
+    if (!formData.location.trim()) errors.location = "Location is required";
+    if (!formData.numberOfParticipants)
+      errors.numberOfParticipants = "Number of participants is required";
+    else if (parseInt(formData.numberOfParticipants) < 2)
+      errors.numberOfParticipants = "At least 2 participants are required";
+    if (!formData.amountPerPerson)
+      errors.amountPerPerson = "Amount per person is required";
+    else if (parseInt(formData.amountPerPerson) < 1)
+      errors.amountPerPerson = "Amount must be greater than 0";
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
+
+    if (!validateForm()) return;
+
+    setIsSubmitting(true);
+
     try {
-      const response = await fetch("/api/equb/create-equb ", {
-        method: "POST",
+      const endpoint = isEditing ? `/api/equb/${initialData._id}` : "/api/equb/create-equb";
+
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ formData, userRef: currentUser.user.id }), // Sending the formData as a JSON string
+        body: JSON.stringify({
+          formData,
+          userRef: currentUser.user.id,
+        }),
       });
 
       if (response.ok) {
-        // Handle successful submission
         const responseData = await response.json();
-        console.log("Form submitted successfully", responseData);
+        console.log(
+          isEditing
+            ? "Equb updated successfully"
+            : "Form submitted successfully",
+          responseData
+        );
+        onClose(true); // Pass true to indicate successful submission
       } else {
-        console.log("Error submitting form");
+        const errorData = await response.json();
+        console.error("Error:", errorData);
+        setFormErrors({
+          submit:
+            errorData.message || "Something went wrong. Please try again.",
+        });
       }
-      console.log("Form submitted:", formData);
-      onClose();
     } catch (error) {
       console.error("Error:", error);
+      setFormErrors({
+        submit: "Network error. Please check your connection and try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,6 +176,14 @@ export const CreateEqub = ({ isOpen, onClose }) => {
     });
     setLocationSearch("");
     setShowLocationDropdown(false);
+
+    // Clear location error if it exists
+    if (formErrors.location) {
+      setFormErrors({
+        ...formErrors,
+        location: "",
+      });
+    }
   };
 
   // Close dropdown when clicking outside
@@ -122,13 +215,17 @@ export const CreateEqub = ({ isOpen, onClose }) => {
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-5 text-white flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold">Create a New Equb</h1>
+              <h1 className="text-2xl font-bold">
+                {isEditing ? "Edit Equb" : "Create a New Equb"}
+              </h1>
               <p className="text-blue-100 mt-1">
-                Set up your rotating savings group
+                {isEditing
+                  ? "Update your rotating savings group"
+                  : "Set up your rotating savings group"}
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={() => onClose(false)}
               className="rounded-full p-1.5 bg-blue-700 bg-opacity-30 hover:bg-opacity-50 transition"
             >
               <X className="h-5 w-5 text-white" />
@@ -137,19 +234,37 @@ export const CreateEqub = ({ isOpen, onClose }) => {
 
           {/* Scrollable Content */}
           <div className="overflow-y-auto flex-grow px-6 py-6">
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
-              <div className="flex">
-                <AlertCircle className="h-6 w-6 text-blue-500 mr-3 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium text-blue-800">Important Note</h3>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Physical identity verification will be required before
-                    accepting participants into your Equb. Make sure to verify
-                    members in person.
-                  </p>
+            {!isEditing && (
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-6">
+                <div className="flex">
+                  <AlertCircle className="h-6 w-6 text-blue-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-blue-800">
+                      Important Note
+                    </h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Physical identity verification will be required before
+                      accepting participants into your Equb. Make sure to verify
+                      members in person.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {formErrors.submit && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg mb-6">
+                <div className="flex">
+                  <AlertCircle className="h-6 w-6 text-red-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-red-800">Error</h3>
+                    <p className="text-sm text-red-700 mt-1">
+                      {formErrors.submit}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,10 +282,19 @@ export const CreateEqub = ({ isOpen, onClose }) => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className="block w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      className={`block w-full px-4 py-3 rounded-xl border ${
+                        formErrors.name
+                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      } transition`}
                       placeholder="e.g., Weekly Office Savings"
                       required
                     />
+                    {formErrors.name && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.name}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -197,11 +321,20 @@ export const CreateEqub = ({ isOpen, onClose }) => {
                         setShowLocationDropdown(true);
                       }}
                       onClick={() => setShowLocationDropdown(true)}
-                      className="block w-full pl-10 pr-10 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      className={`block w-full pl-10 pr-10 py-3 rounded-xl border ${
+                        formErrors.location
+                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      } transition`}
                       placeholder="Search locations..."
                       required
                     />
                     <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" />
+                    {formErrors.location && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.location}
+                      </p>
+                    )}
                   </div>
 
                   {/* Location Dropdown */}
@@ -257,10 +390,19 @@ export const CreateEqub = ({ isOpen, onClose }) => {
                       value={formData.numberOfParticipants}
                       onChange={handleChange}
                       min="2"
-                      className="block w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      className={`block w-full pl-10 pr-4 py-3 rounded-xl border ${
+                        formErrors.numberOfParticipants
+                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      } transition`}
                       placeholder="e.g., 12"
                       required
                     />
+                    {formErrors.numberOfParticipants && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.numberOfParticipants}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -280,10 +422,19 @@ export const CreateEqub = ({ isOpen, onClose }) => {
                       value={formData.amountPerPerson}
                       onChange={handleChange}
                       min="1"
-                      className="block w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                      className={`block w-full pl-10 pr-4 py-3 rounded-xl border ${
+                        formErrors.amountPerPerson
+                          ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      } transition`}
                       placeholder="e.g., 1000"
                       required
                     />
+                    {formErrors.amountPerPerson && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {formErrors.amountPerPerson}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -382,23 +533,25 @@ export const CreateEqub = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="col-span-2">
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
-                    <div className="flex items-start">
-                      <CalendarDays className="h-6 w-6 text-gray-600 mr-3 flex-shrink-0" />
-                      <div>
-                        <h3 className="font-medium text-gray-800">
-                          When will this Equb start?
-                        </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          The Equb will automatically start once all{" "}
-                          {formData.numberOfParticipants || "required"}{" "}
-                          participants have joined and been approved by you.
-                        </p>
+                {!isEditing && (
+                  <div className="col-span-2">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+                      <div className="flex items-start">
+                        <CalendarDays className="h-6 w-6 text-gray-600 mr-3 flex-shrink-0" />
+                        <div>
+                          <h3 className="font-medium text-gray-800">
+                            When will this Equb start?
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            The Equb will automatically start once all{" "}
+                            {formData.numberOfParticipants || "required"}{" "}
+                            participants have joined and been approved by you.
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="col-span-2">
                   <label
@@ -425,7 +578,7 @@ export const CreateEqub = ({ isOpen, onClose }) => {
           <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onClose(false)}
               className="flex items-center px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Cancel
@@ -436,10 +589,26 @@ export const CreateEqub = ({ isOpen, onClose }) => {
               whileTap={{ scale: 0.98 }}
               type="button"
               onClick={handleSubmit}
-              className="flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition shadow-sm"
+              disabled={isSubmitting}
+              className={`flex items-center px-5 py-2.5 ${
+                isSubmitting ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+              } text-white rounded-xl transition shadow-sm`}
             >
-              Create Equb
-              <CheckCircle2 className="h-5 w-5 ml-1" />
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+                  {isEditing ? "Updating..." : "Creating..."}
+                </>
+              ) : (
+                <>
+                  {isEditing ? "Update" : "Create"} Equb
+                  {isEditing ? (
+                    <Edit className="h-5 w-5 ml-1" />
+                  ) : (
+                    <CheckCircle2 className="h-5 w-5 ml-1" />
+                  )}
+                </>
+              )}
             </motion.button>
           </div>
         </motion.div>

@@ -1,7 +1,6 @@
-// Update the MyEqubsList component
-
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+/* eslint-disable-next-line no-unused-vars */
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Clock,
@@ -12,21 +11,25 @@ import {
   ChevronRight,
   Edit,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {CreateEqub} from "./CreateEqub";
 
 export const MyEqubsList = ({
   equbs,
   showAdminControls = false,
   onEqubDeleted,
+  onEqubUpdated,
 }) => {
-  const navigate = useNavigate();
   const [joinStatus, setJoinStatus] = useState({});
   const [loadingMap, setLoadingMap] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedEqub, setSelectedEqub] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [equbToEdit, setEqubToEdit] = useState(null);
+  // New states for delete confirmation modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [equbToDelete, setEqubToDelete] = useState(null);
   const equbsPerPage = 9;
 
@@ -66,6 +69,30 @@ export const MyEqubsList = ({
     setCurrentPage(1);
   }, [equbs]);
 
+  // Automatically clear message after delay
+  useEffect(() => {
+    // For any equb with a status message, clear it after 3 seconds
+    const timers = [];
+    Object.keys(joinStatus).forEach(equbId => {
+      if (joinStatus[equbId]?.message) {
+        const timer = setTimeout(() => {
+          setJoinStatus(prev => ({
+            ...prev,
+            [equbId]: {
+              ...prev[equbId],
+              message: ""
+            }
+          }));
+        }, 3000);
+        timers.push(timer);
+      }
+    });
+    
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
+  }, [joinStatus]);
+
   const handleCancelJoin = async (equbId) => {
     setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
     try {
@@ -87,17 +114,6 @@ export const MyEqubsList = ({
             message: "Request canceled successfully",
           },
         });
-
-        // After a brief delay, remove the message
-        setTimeout(() => {
-          setJoinStatus((prev) => ({
-            ...prev,
-            [equbId]: {
-              status: null,
-              message: "",
-            },
-          }));
-        }, 3000);
       } else {
         setJoinStatus({
           ...joinStatus,
@@ -127,55 +143,84 @@ export const MyEqubsList = ({
     setShowDetailsModal(true);
   };
 
-  // Handle Edit Equb
+  // Handle edit equb
   const handleEditEqub = (equb) => {
-    navigate(`/edit-equb/${equb._id}`, { state: { equb } });
+    setEqubToEdit(equb);
+    setShowEditModal(true);
   };
 
-  // Confirm Delete
-  const handleConfirmDelete = (equb) => {
+  // Show delete confirmation modal
+  const handleShowDeleteConfirmation = (equb) => {
     setEqubToDelete(equb);
-    setShowDeleteConfirmModal(true);
+    setShowDeleteModal(true);
   };
 
-  // Handle Delete Equb
+  // Handle delete equb
   const handleDeleteEqub = async () => {
     if (!equbToDelete) return;
     
-    setLoadingMap((prev) => ({ ...prev, [equbToDelete._id]: true }));
+    const equbId = equbToDelete._id;
+    setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
+    
     try {
-      const response = await fetch(`/api/equb/${equbToDelete._id}`, {
+      const response = await fetch(`/api/equb/${equbId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        // Close the modal
-        setShowDeleteConfirmModal(false);
+        // Close the delete modal immediately
+        setShowDeleteModal(false);
+        setEqubToDelete(null);
         
-        // Notify parent component to refresh the list
-        if (onEqubDeleted) {
-          onEqubDeleted(equbToDelete._id);
+        // Notify parent component about update
+        if (onEqubUpdated) {
+          onEqubUpdated();
         }
-        
-        // If we're in details modal and deleting the selected equb, close it
-        if (selectedEqub && selectedEqub._id === equbToDelete._id) {
-          setShowDetailsModal(false);
+        if(onEqubDeleted) {
+          onEqubDeleted();
         }
       } else {
-        console.error("Failed to delete equb:", data.message);
-        alert(data.message || "Failed to delete equb");
+        const errorData = await response.json();
+        console.error("Error deleting Equb:", errorData);
+        
+        // Close modal but show error in the join status area of the affected equb
+        setShowDeleteModal(false);
+        setEqubToDelete(null);
+        setJoinStatus({
+          ...joinStatus,
+          [equbId]: {
+            status: "Error",
+            message: errorData.message || "Failed to delete. Please try again.",
+          },
+        });
       }
     } catch (error) {
-      console.error("Error deleting equb:", error);
-      alert("An error occurred while deleting the equb");
-    } finally {
-      setLoadingMap((prev) => ({ ...prev, [equbToDelete._id]: false }));
+      console.error("Error deleting Equb:", error);
+      // Close modal but show error in the join status area of the affected equb
+      setShowDeleteModal(false);
       setEqubToDelete(null);
+      setJoinStatus({
+        ...joinStatus,
+        [equbId]: {
+          status: "Error",
+          message: "Failed to delete. Please check your connection.",
+        },
+      });
+    } finally {
+      setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
+    }
+  };
+
+  // Handle edit modal close
+  const handleEditModalClose = (success) => {
+    setShowEditModal(false);
+    setEqubToEdit(null);
+    
+    if (success && onEqubUpdated) {
+      onEqubUpdated();
     }
   };
 
@@ -202,16 +247,26 @@ export const MyEqubsList = ({
           <button
             className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center"
             onClick={() => handleEditEqub(equb)}
+            disabled={loadingMap[equbId]}
           >
             <Edit className="h-4 w-4 mr-1" />
             Edit
           </button>
           <button
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center"
-            onClick={() => handleConfirmDelete(equb)}
+            onClick={() => handleShowDeleteConfirmation(equb)}
+            disabled={loadingMap[equbId]}
           >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Delete
+            {loadingMap[equbId] ? (
+              <>
+                <span className="animate-pulse">Processing...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="h-4 w-4 mr-1" />
+                Delete
+              </>
+            )}
           </button>
         </div>
       );
@@ -512,15 +567,13 @@ export const MyEqubsList = ({
                 </div>
               )}
 
-              <div className="flex justify-end mt-6 space-x-3">
+              <div className="flex justify-end mt-6">
                 <button
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
                   onClick={() => setShowDetailsModal(false)}
                 >
                   Close
                 </button>
-
-                {renderActionButtons(selectedEqub)}
               </div>
             </div>
           </div>
@@ -528,46 +581,65 @@ export const MyEqubsList = ({
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirmModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full">
-            <div className="text-center mb-6">
-              <div className="bg-red-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Trash2 className="h-8 w-8 text-red-600" />
+      <AnimatePresence>
+        {showDeleteModal && equbToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4"
+            >
+              <div className="text-center mb-4">
+                <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4">
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">Delete Equb</h3>
+                <p className="text-gray-600">
+                  Are you sure you want to delete <span className="font-semibold">{equbToDelete.name}</span>? This action cannot be undone.
+                </p>
               </div>
-              <h3 className="text-xl font-bold">Delete Equb</h3>
-              <p className="text-gray-600 mt-2">
-                Are you sure you want to delete "{equbToDelete?.name}"? This action cannot be undone.
-              </p>
-            </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
+                <button
+                  className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setEqubToDelete(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center justify-center"
+                  onClick={handleDeleteEqub}
+                  disabled={loadingMap[equbToDelete._id]}
+                >
+                  {loadingMap[equbToDelete._id] ? (
+                    <span className="inline-block animate-pulse">Deleting...</span>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <div className="flex justify-center space-x-4">
-              <button
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                onClick={() => setShowDeleteConfirmModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
-                onClick={handleDeleteEqub}
-                disabled={loadingMap[equbToDelete?._id]}
-              >
-                {loadingMap[equbToDelete?._id] ? (
-                  <>
-                    <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
-                    Deleting...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Edit Modal */}
+      {showEditModal && equbToEdit && (
+        <CreateEqub
+          isOpen={showEditModal}
+          onClose={handleEditModalClose}
+          initialData={equbToEdit}
+          isEditing={true}
+        />
       )}
     </motion.section>
   );

@@ -1,8 +1,7 @@
-// Update the MyEqubs component
 import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
-import { motion } from "framer-motion";
-import { Calendar, TrendingUp, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Calendar, TrendingUp, Users, CheckCircle, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
 import { MyEqubsList } from "../../../components/ParticipantComponent/MyEqubsList";
@@ -13,6 +12,9 @@ export const MyEqubs = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [equbs, setEqubs] = useState([]);
+  
+  // Toast notification state
+  const [toast, setToast] = useState(null);
 
   // Search and filter states
   const [activeCategory, setActiveCategory] = useState("all");
@@ -26,6 +28,17 @@ export const MyEqubs = () => {
     totalJoined: 0,
     nextDue: null,
   });
+
+  // Clear toast after delay
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   const fetchEqubs = async () => {
     setIsLoading(true);
@@ -106,6 +119,11 @@ export const MyEqubs = () => {
     fetchEqubs();
   }, []);
 
+  // Show toast notification
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
   // Handle equb deleted from the list
   const handleEqubDeleted = (deletedEqubId) => {
     // Remove the deleted equb from the state
@@ -120,8 +138,17 @@ export const MyEqubs = () => {
         (equbs.find(e => e._id === deletedEqubId && e.status === 'active') ? 1 : 0)
     }));
     
-    // Show success notification
-    alert("Equb deleted successfully");
+    // Show success notification as a toast
+    showToast("Equb deleted successfully");
+  };
+
+  // Handle equb updated from the list
+  const handleEqubUpdated = () => {
+    // Refetch all equbs to get the latest data
+    fetchEqubs();
+    
+    // Show success notification as a toast
+    showToast("Equb updated successfully");
   };
 
   const formatDate = (dateString) => {
@@ -160,6 +187,27 @@ export const MyEqubs = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-4 right-4 z-50 rounded-lg p-4 shadow-lg flex items-center ${
+              toast.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+            ) : (
+              <X className="h-5 w-5 mr-2 text-red-500" />
+            )}
+            <p>{toast.message}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="px-6 py-8">
         {/* Page Header */}
         <motion.div
@@ -321,6 +369,7 @@ export const MyEqubs = () => {
             equbs={getFilteredEqubs()}
             showAdminControls={true}
             onEqubDeleted={handleEqubDeleted}
+            onEqubUpdated={handleEqubUpdated}
           />
         )}
       </div>
