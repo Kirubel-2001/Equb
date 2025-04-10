@@ -1,14 +1,18 @@
+// Update the MyEqubs component
 import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import { Calendar, TrendingUp, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
-import { AllEqubs } from "../../../components/ParticipantComponent/AllEqubs";
+import { MyEqubsList } from "../../../components/ParticipantComponent/MyEqubsList";
 
 export const MyEqubs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("created");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [equbs, setEqubs] = useState([]);
 
   // Search and filter states
   const [activeCategory, setActiveCategory] = useState("all");
@@ -23,124 +27,102 @@ export const MyEqubs = () => {
     nextDue: null,
   });
 
+  const fetchEqubs = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Get created equbs
+      const createdResponse = await fetch('/api/equb/my-equbs', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!createdResponse.ok) {
+        throw new Error('Failed to fetch created equbs');
+      }
+      
+      const createdEqubsData = await createdResponse.json();
+      const createdEqubs = createdEqubsData.map(equb => ({
+        ...equb,
+        type: "created",
+        isCreator: true
+      }));
+      
+      // Get joined equbs
+      const joinedResponse = await fetch('/api/equb/joined-equbs', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!joinedResponse.ok) {
+        throw new Error('Failed to fetch joined equbs');
+      }
+      
+      const joinedEqubsData = await joinedResponse.json();
+      const joinedEqubs = joinedEqubsData.map(equb => ({
+        ...equb,
+        type: "joined",
+        isCreator: false
+      }));
+      
+      const allEqubs = [...createdEqubs, ...joinedEqubs];
+      setEqubs(allEqubs);
+      
+      // Calculate stats
+      const created = createdEqubs.length;
+      const activeCreated = createdEqubs.filter(
+        (e) => e.status === "active"
+      ).length;
+      const totalJoined = joinedEqubs.length;
+
+      // Find next due equb
+      const now = new Date();
+      const upcoming = allEqubs
+        .filter((e) => e.nextDueDate && new Date(e.nextDueDate) > now)
+        .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+
+      setStats({
+        totalCreated: created,
+        activeCreated: activeCreated,
+        totalJoined,
+        nextDue: upcoming.length > 0 ? upcoming[0] : null,
+      });
+    } catch (err) {
+      console.error("Error fetching equbs:", err);
+      setError("Failed to load your equbs. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    // Simulate API call
-    const fetchMyEqubs = () => {
-      setTimeout(() => {
-        const mockCreatedEqubs = [
-          {
-            id: 1,
-            name: "Family Savings Circle",
-            location: "Bole, Addis Ababa",
-            members: 8,
-            totalMembers: 10,
-            amount: 2000,
-            cycle: "Monthly",
-            nextDueDate: "2025-04-15",
-            totalCollected: 16000,
-            status: "active",
-            isCreator: true,
-            progress: 40,
-            winner: "Almaz Tadesse",
-            type: "created",
-          },
-          {
-            id: 2,
-            name: "Office Weekly Fund",
-            location: "Kirkos, Addis Ababa",
-            members: 12,
-            totalMembers: 12,
-            amount: 500,
-            cycle: "Weekly",
-            nextDueDate: "2025-04-02",
-            totalCollected: 6000,
-            status: "active",
-            isCreator: true,
-            progress: 75,
-            winner: "Bekele Mulatu",
-            type: "created",
-          },
-          {
-            id: 3,
-            name: "Startup Capital Fund",
-            location: "Kazanchis, Addis Ababa",
-            members: 3,
-            totalMembers: 5,
-            amount: 5000,
-            cycle: "Monthly",
-            nextDueDate: null,
-            totalCollected: 0,
-            status: "pending",
-            isCreator: true,
-            progress: 0,
-            winner: null,
-            type: "created",
-          },
-        ];
-
-        const mockJoinedEqubs = [
-          {
-            id: 4,
-            name: "Neighborhood Iqub",
-            location: "Mekanisa, Addis Ababa",
-            members: 20,
-            totalMembers: 20,
-            amount: 1500,
-            cycle: "Monthly",
-            nextDueDate: "2025-04-10",
-            totalCollected: 30000,
-            status: "active",
-            isCreator: false,
-            creator: "Dawit Haile",
-            progress: 60,
-            winner: "Samrawit Lemma",
-            type: "joined",
-          },
-          {
-            id: 5,
-            name: "Annual Big Saving",
-            location: "Lideta, Addis Ababa",
-            members: 15,
-            totalMembers: 15,
-            amount: 10000,
-            cycle: "Yearly",
-            nextDueDate: "2025-12-01",
-            totalCollected: 150000,
-            status: "active",
-            isCreator: false,
-            creator: "Yonas Tesfaye",
-            progress: 25,
-            winner: null,
-            type: "joined",
-          },
-        ];
-
-        const allEqubs = [...mockCreatedEqubs, ...mockJoinedEqubs];
-
-        // Calculate stats
-        const created = mockCreatedEqubs.length;
-        const activeCreated = mockCreatedEqubs.filter(
-          (e) => e.status === "active"
-        ).length;
-        const totalJoined = mockJoinedEqubs.length;
-
-        // Find next due equb
-        const now = new Date();
-        const upcoming = allEqubs
-          .filter((e) => e.nextDueDate && new Date(e.nextDueDate) > now)
-          .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
-
-        setStats({
-          totalCreated: created,
-          activeCreated: activeCreated,
-          totalJoined,
-          nextDue: upcoming.length > 0 ? upcoming[0] : null,
-        });
-      }, 800);
-    };
-
-    fetchMyEqubs();
+    fetchEqubs();
   }, []);
+
+  // Handle equb deleted from the list
+  const handleEqubDeleted = (deletedEqubId) => {
+    // Remove the deleted equb from the state
+    setEqubs(prevEqubs => prevEqubs.filter(equb => equb._id !== deletedEqubId));
+    
+    // Update stats
+    setStats(prevStats => ({
+      ...prevStats,
+      totalCreated: prevStats.totalCreated - 1,
+      // Only decrement active count if the deleted equb was active
+      activeCreated: prevStats.activeCreated - 
+        (equbs.find(e => e._id === deletedEqubId && e.status === 'active') ? 1 : 0)
+    }));
+    
+    // Show success notification
+    alert("Equb deleted successfully");
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -161,6 +143,19 @@ export const MyEqubs = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return diffDays;
+  };
+
+  const getFilteredEqubs = () => {
+    return equbs.filter(equb =>
+      (activeTab === "all" || equb.type === activeTab) &&
+      (searchTerm === "" ||
+        equb.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (activeCategory === "all" || equb.status === activeCategory) &&
+      (locationFilter === "" ||
+        equb.location.toLowerCase().includes(locationFilter.toLowerCase())) &&
+      (amountFilter.min === "" || equb.amount >= parseInt(amountFilter.min)) &&
+      (amountFilter.max === "" || equb.amount <= parseInt(amountFilter.max))
+    );
   };
 
   return (
@@ -274,7 +269,7 @@ export const MyEqubs = () => {
           setLocationFilter={setLocationFilter}
         />
 
-        {/* Tabs - Updated to be centered and larger */}
+        {/* Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -305,14 +300,29 @@ export const MyEqubs = () => {
           </div>
         </motion.div>
 
-        {/* Equbs List */}
-        <AllEqubs
-          searchTerm={searchTerm}
-          activeCategory={activeCategory}
-          amountFilter={amountFilter}
-          locationFilter={locationFilter}
-          showAdminControls={true}
-        />
+        {/* Loading, Error and Equbs List */}
+        {isLoading ? (
+          <div className="text-center py-10">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200"></div>
+            <p className="mt-2 text-gray-600">Loading your equbs...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-10">
+            <p className="text-red-500">{error}</p>
+            <button 
+              onClick={() => fetchEqubs()} 
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <MyEqubsList
+            equbs={getFilteredEqubs()}
+            showAdminControls={true}
+            onEqubDeleted={handleEqubDeleted}
+          />
+        )}
       </div>
     </div>
   );

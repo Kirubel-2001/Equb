@@ -15,6 +15,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
 import { AllEqubs } from "./components/ParticipantComponent/AllEqubs";
+import { EditEqub } from "./components/ParticipantComponent/EditEqub";
 
 function App() {
   return (
@@ -44,6 +45,7 @@ function App() {
         <Route element={<PrivateRoute allowedRoles={["Participant"]} />}>
           <Route path="/participant" element={<ParticipantDashboard />} />
           <Route path="/create" element={<CreateEqub />} />
+          <Route path="/edit-equb/:id" element={<EditEqub />} />
         </Route>
       </Routes>
     </BrowserRouter>

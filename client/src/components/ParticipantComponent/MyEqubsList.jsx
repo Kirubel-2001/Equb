@@ -1,69 +1,45 @@
+// Update the MyEqubsList component
+
 import React, { useState, useEffect } from "react";
-/* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import {
   MapPin,
-  UserPlus,
   Clock,
   Users,
   DollarSign,
   X,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Trash2,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export const AllEqubs = ({
-  searchTerm = "",
-  activeCategory = "all",
-  amountFilter = { min: "", max: "" },
-  setShowPopup,
-  locationFilter = "",
+export const MyEqubsList = ({
+  equbs,
+  showAdminControls = false,
+  onEqubDeleted,
 }) => {
-  const [equbs, setEqubs] = useState([]);
-  const [filteredEqubs, setFilteredEqubs] = useState([]);
+  const navigate = useNavigate();
   const [joinStatus, setJoinStatus] = useState({});
   const [loadingMap, setLoadingMap] = useState({});
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedEqub, setSelectedEqub] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [equbToDelete, setEqubToDelete] = useState(null);
   const equbsPerPage = 9;
 
-  // Fetch equbs on component mount
+  // Fetch join status on component mount
   useEffect(() => {
-    const fetchEqubs = async () => {
-      setIsLoading(true);
-      setError(null);
-      
+    const fetchJoinStatus = async () => {
       try {
-        // Fetch all equbs
-        const response = await fetch("/api/equb/get-equbs", {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to fetch Equbs");
-        }
-        
-        const equbsData = await response.json();
-        setEqubs(equbsData);
-        
         // Fetch join status for each equb
         const statusObj = {};
-        for (const equb of equbsData) {
+        for (const equb of equbs) {
           try {
             const statusResponse = await fetch(
-              `/api/participant/status/${equb._id}`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                  'Content-Type': 'application/json'
-                }
-              }
+              `/api/participant/status/${equb._id}`
             );
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
@@ -78,103 +54,17 @@ export const AllEqubs = ({
         }
         setJoinStatus(statusObj);
       } catch (error) {
-        console.error("Error fetching Equbs:", error);
-        setError("Failed to load equbs. Please try again later.");
-      } finally {
-        setIsLoading(false);
+        console.error("Error fetching join status:", error);
       }
     };
 
-    fetchEqubs();
-  }, []);
+    fetchJoinStatus();
+  }, [equbs]);
 
-  // Filter equbs based on search, category, amount and location
+  // Reset to first page when filters change
   useEffect(() => {
-    const filtered = equbs.filter((equb) => {
-      // Filter by status category
-      if (activeCategory !== "all" && equb.status !== activeCategory)
-        return false;
-
-      // Filter by amount range
-      if (amountFilter.min && equb.amountPerPerson < Number(amountFilter.min))
-        return false;
-      if (amountFilter.max && equb.amountPerPerson > Number(amountFilter.max))
-        return false;
-        
-      // Filter by location
-      if (
-        locationFilter &&
-        !equb.location.toLowerCase().includes(locationFilter.toLowerCase())
-      )
-        return false;
-        
-      // Filter by search term (name, location, or amount)
-      return (
-        searchTerm === "" ||
-        equb.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equb.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        equb.amountPerPerson.toString().includes(searchTerm)
-      );
-    });
-    
-    setFilteredEqubs(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [equbs, searchTerm, activeCategory, amountFilter, locationFilter]);
-
-  const handleJoinEqub = async (equbId) => {
-    setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
-    try {
-      const response = await fetch(`/api/participant/join/${equbId}`, {
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setJoinStatus({
-          ...joinStatus,
-          [equbId]: {
-            status: "Pending",
-            message: "Join request sent successfully",
-          },
-        });
-      } else {
-        // If the error is that user already joined
-        if (data.status) {
-          setJoinStatus({
-            ...joinStatus,
-            [equbId]: {
-              status: data.status,
-              message: data.message,
-            },
-          });
-        } else {
-          setJoinStatus({
-            ...joinStatus,
-            [equbId]: {
-              status: "Error",
-              message: data.message,
-            },
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Error joining Equb:", error);
-      setJoinStatus({
-        ...joinStatus,
-        [equbId]: {
-          status: "Error",
-          message: "Failed to join. Please try again.",
-        },
-      });
-    } finally {
-      setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
-    }
-  };
+    setCurrentPage(1);
+  }, [equbs]);
 
   const handleCancelJoin = async (equbId) => {
     setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
@@ -182,9 +72,8 @@ export const AllEqubs = ({
       const response = await fetch(`/api/participant/leave/${equbId}`, {
         method: "DELETE",
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       const data = await response.json();
@@ -238,11 +127,63 @@ export const AllEqubs = ({
     setShowDetailsModal(true);
   };
 
+  // Handle Edit Equb
+  const handleEditEqub = (equb) => {
+    navigate(`/edit-equb/${equb._id}`, { state: { equb } });
+  };
+
+  // Confirm Delete
+  const handleConfirmDelete = (equb) => {
+    setEqubToDelete(equb);
+    setShowDeleteConfirmModal(true);
+  };
+
+  // Handle Delete Equb
+  const handleDeleteEqub = async () => {
+    if (!equbToDelete) return;
+    
+    setLoadingMap((prev) => ({ ...prev, [equbToDelete._id]: true }));
+    try {
+      const response = await fetch(`/api/equb/${equbToDelete._id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Close the modal
+        setShowDeleteConfirmModal(false);
+        
+        // Notify parent component to refresh the list
+        if (onEqubDeleted) {
+          onEqubDeleted(equbToDelete._id);
+        }
+        
+        // If we're in details modal and deleting the selected equb, close it
+        if (selectedEqub && selectedEqub._id === equbToDelete._id) {
+          setShowDetailsModal(false);
+        }
+      } else {
+        console.error("Failed to delete equb:", data.message);
+        alert(data.message || "Failed to delete equb");
+      }
+    } catch (error) {
+      console.error("Error deleting equb:", error);
+      alert("An error occurred while deleting the equb");
+    } finally {
+      setLoadingMap((prev) => ({ ...prev, [equbToDelete._id]: false }));
+      setEqubToDelete(null);
+    }
+  };
+
   // Get current page equbs
   const indexOfLastEqub = currentPage * equbsPerPage;
   const indexOfFirstEqub = indexOfLastEqub - equbsPerPage;
-  const currentEqubs = filteredEqubs.slice(indexOfFirstEqub, indexOfLastEqub);
-  const totalPages = Math.ceil(filteredEqubs.length / equbsPerPage);
+  const currentEqubs = equbs.slice(indexOfFirstEqub, indexOfLastEqub);
+  const totalPages = Math.ceil(equbs.length / equbsPerPage);
 
   // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -250,66 +191,47 @@ export const AllEqubs = ({
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
-  const getJoinButtonText = (equbId) => {
-    if (loadingMap[equbId]) return "Processing...";
+  // Function to render action buttons based on equb type and status
+  const renderActionButtons = (equb) => {
+    const equbId = equb._id;
 
-    const status = joinStatus[equbId]?.status;
-    if (status === "Pending") return "Pending";
-    if (status === "Accepted") return "Joined";
-    if (status === "Rejected") return "Rejected";
-
-    return "Join";
-  };
-
-  const getJoinButtonStyle = (equbId) => {
-    const status = joinStatus[equbId]?.status;
-
-    if (status === "Pending") {
-      return "px-4 py-2 bg-yellow-500 text-white rounded-lg transition flex items-center";
-    } else if (status === "Accepted") {
-      return "px-4 py-2 bg-green-600 text-white rounded-lg transition flex items-center";
-    } else if (status === "Rejected" || status === "Error") {
-      return "px-4 py-2 bg-red-600 text-white rounded-lg transition flex items-center";
-    }
-
-    return "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center";
-  };
-
-  // Function to render join/cancel buttons based on status
-  const renderActionButtons = (equbId) => {
-    const status = joinStatus[equbId]?.status;
-
-    // If pending or accepted, show cancel button
-    if (status === "Pending" || status === "Accepted") {
+    // For created equbs, show admin controls
+    if (equb.type === "created" && showAdminControls) {
       return (
         <div className="flex space-x-2">
-          <button className={getJoinButtonStyle(equbId)} disabled={true}>
-            <UserPlus className="h-4 w-4 mr-1" />
-            {getJoinButtonText(equbId)}
+          <button
+            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center"
+            onClick={() => handleEditEqub(equb)}
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Edit
           </button>
           <button
-            className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition flex items-center"
-            onClick={() => handleCancelJoin(equbId)}
-            disabled={loadingMap[equbId]}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center"
+            onClick={() => handleConfirmDelete(equb)}
           >
-            <X className="h-4 w-4 mr-1" />
-            {loadingMap[equbId] ? "Processing..." : "Cancel"}
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
           </button>
         </div>
       );
     }
 
-    // Otherwise show regular join button
-    return (
-      <button
-        className={getJoinButtonStyle(equbId)}
-        onClick={() => handleJoinEqub(equbId)}
-        disabled={loadingMap[equbId]}
-      >
-        <UserPlus className="h-4 w-4 mr-1" />
-        {getJoinButtonText(equbId)}
-      </button>
-    );
+    // For joined equbs, show leave button
+    if (equb.type === "joined") {
+      return (
+        <button
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center"
+          onClick={() => handleCancelJoin(equbId)}
+          disabled={loadingMap[equbId]}
+        >
+          <X className="h-4 w-4 mr-1" />
+          {loadingMap[equbId] ? "Processing..." : "Leave"}
+        </button>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -318,114 +240,92 @@ export const AllEqubs = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <h3 className="text-xl font-bold mb-4">Available Equbs</h3>
-
-      {isLoading ? (
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200"></div>
-          <p className="mt-2 text-gray-600">Loading equbs...</p>
-        </div>
-      ) : error ? (
-        <div className="text-center py-10">
-          <p className="text-red-500">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          >
-            Try Again
-          </button>
-        </div>
-      ) : (
+      {equbs.length > 0 ? (
         <div className="space-y-4">
-          {filteredEqubs.length > 0 ? (
-            currentEqubs.map((equb) => (
-              <motion.div
-                key={equb._id}
-                whileHover={{ scale: 1.01 }}
-                className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition flex flex-col md:flex-row justify-between"
-              >
-                <div className="mb-4 md:mb-0">
-                  <div className="flex items-center">
-                    <h4 className="font-bold">{equb.name}</h4>
-                    <span
-                      className={`ml-3 text-xs px-2 py-1 rounded-full ${
-                        equb.equbType === "Automatic"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {equb.equbType === "Automatic"
-                        ? "Automatic Lottery"
-                        : "Manual Lottery"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center text-gray-500 text-sm mt-1">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span>{equb.location}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 mt-3">
-                    <div className="text-sm flex items-center text-gray-600">
-                      <Users className="h-4 w-4 mr-1 text-blue-600" />
-                      {equb.currentParticipants}/{equb.numberOfParticipants} members
-                    </div>
-
-                    <div className="text-sm flex items-center text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-1 text-blue-600" />
-                      {equb.amountPerPerson} ETB
-                    </div>
-
-                    <div className="text-sm flex items-center text-gray-600">
-                      <Clock className="h-4 w-4 mr-1 text-blue-600" />
-                      {equb.cycle}
-                    </div>
-                  </div>
-
-                  {joinStatus[equb._id]?.message && (
-                    <div
-                      className={`mt-2 text-sm ${
-                        joinStatus[equb._id]?.status === "Error" ||
-                        joinStatus[equb._id]?.status === "Rejected"
-                          ? "text-red-600"
-                          : joinStatus[equb._id]?.status === "Pending"
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {joinStatus[equb._id]?.message}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition"
-                    onClick={() => handleShowDetails(equb)}
+          {currentEqubs.map((equb) => (
+            <motion.div
+              key={equb._id}
+              whileHover={{ scale: 1.01 }}
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition flex flex-col md:flex-row justify-between"
+            >
+              <div className="mb-4 md:mb-0">
+                <div className="flex items-center">
+                  <h4 className="font-bold">{equb.name}</h4>
+                  <span
+                    className={`ml-3 text-xs px-2 py-1 rounded-full ${
+                      equb.equbType === "Automatic"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
                   >
-                    Details
-                  </button>
-
-                  {renderActionButtons(equb._id)}
+                    {equb.equbType === "Automatic"
+                      ? "Automatic Lottery"
+                      : "Manual Lottery"}
+                  </span>
+                  <span
+                    className={`ml-3 text-xs px-2 py-1 rounded-full ${
+                      equb.type === "created"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-purple-100 text-purple-800"
+                    }`}
+                  >
+                    {equb.type === "created" ? "Created" : "Joined"}
+                  </span>
                 </div>
-              </motion.div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">
-                No Equbs found matching your criteria.
-              </p>
-              <button
-                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                onClick={() => setShowPopup && setShowPopup(true)}
-              >
-                Create a new Equb
-              </button>
-            </div>
-          )}
+
+                <div className="flex items-center text-gray-500 text-sm mt-1">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>{equb.location}</span>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-3">
+                  <div className="text-sm flex items-center text-gray-600">
+                    <Users className="h-4 w-4 mr-1 text-blue-600" />
+                    {equb.currentParticipants}/{equb.numberOfParticipants} members
+                  </div>
+
+                  <div className="text-sm flex items-center text-gray-600">
+                    <DollarSign className="h-4 w-4 mr-1 text-blue-600" />
+                    {equb.amountPerPerson} ETB
+                  </div>
+
+                  <div className="text-sm flex items-center text-gray-600">
+                    <Clock className="h-4 w-4 mr-1 text-blue-600" />
+                    {equb.cycle}
+                  </div>
+                </div>
+
+                {joinStatus[equb._id]?.message && (
+                  <div
+                    className={`mt-2 text-sm ${
+                      joinStatus[equb._id]?.status === "Error" ||
+                      joinStatus[equb._id]?.status === "Rejected"
+                        ? "text-red-600"
+                        : joinStatus[equb._id]?.status === "Pending"
+                        ? "text-yellow-600"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {joinStatus[equb._id]?.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <button
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition"
+                  onClick={() => handleShowDetails(equb)}
+                >
+                  Details
+                </button>
+
+                {renderActionButtons(equb)}
+              </div>
+            </motion.div>
+          ))}
 
           {/* Pagination */}
-          {filteredEqubs.length > equbsPerPage && (
+          {equbs.length > equbsPerPage && (
             <div className="flex justify-center items-center mt-8 gap-2">
               <button
                 onClick={prevPage}
@@ -499,6 +399,18 @@ export const AllEqubs = ({
             </div>
           )}
         </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            No Equbs found matching your criteria.
+          </p>
+          <button
+            className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+            onClick={() => window.location.href = "/create-equb"}
+          >
+            Create a new Equb
+          </button>
+        </div>
       )}
 
       {/* Details Modal */}
@@ -538,6 +450,15 @@ export const AllEqubs = ({
                   {selectedEqub.equbType === "Automatic"
                     ? "Automatic Lottery"
                     : "Manual Lottery"}
+                </span>
+                <span
+                  className={`ml-3 text-xs px-2 py-1 rounded-full ${
+                    selectedEqub.type === "created"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-purple-100 text-purple-800"
+                  }`}
+                >
+                  {selectedEqub.type === "created" ? "Created" : "Joined"}
                 </span>
               </div>
 
@@ -599,8 +520,51 @@ export const AllEqubs = ({
                   Close
                 </button>
 
-                {renderActionButtons(selectedEqub._id)}
+                {renderActionButtons(selectedEqub)}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="text-center mb-6">
+              <div className="bg-red-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold">Delete Equb</h3>
+              <p className="text-gray-600 mt-2">
+                Are you sure you want to delete "{equbToDelete?.name}"? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex justify-center space-x-4">
+              <button
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                onClick={() => setShowDeleteConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
+                onClick={handleDeleteEqub}
+                disabled={loadingMap[equbToDelete?._id]}
+              >
+                {loadingMap[equbToDelete?._id] ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
