@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import {
@@ -18,7 +18,23 @@ export const SideBar = ({ onDashboardToggle, onMyEqubsToggle, onToggle }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   /* eslint-disable-next-line no-unused-vars */
   const [notificationsCount, setNotificationsCount] = useState(3);
-  const [activeItem, setActiveItem] = useState("dashboard"); // Track active sidebar item
+  
+  // Initialize activeItem from localStorage or default to "dashboard"
+  const [activeItem, setActiveItem] = useState(() => {
+    const savedItem = localStorage.getItem('activeNavItem');
+    return savedItem || "dashboard";
+  });
+
+  // Update dashboard/myEqubs visibility based on activeItem when component mounts
+  useEffect(() => {
+    if (activeItem === "dashboard") {
+      onDashboardToggle(true);
+      onMyEqubsToggle(false);
+    } else if (activeItem === "myEqubs") {
+      onDashboardToggle(false);
+      onMyEqubsToggle(true);
+    }
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -27,6 +43,10 @@ export const SideBar = ({ onDashboardToggle, onMyEqubsToggle, onToggle }) => {
 
   const handleItemClick = (item) => {
     setActiveItem(item);
+    
+    // Save to localStorage
+    localStorage.setItem('activeNavItem', item);
+    
     if (item === "dashboard") {
       onDashboardToggle(true);
       onMyEqubsToggle(false);

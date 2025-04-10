@@ -11,12 +11,20 @@ import PopularEqubs from "../../../components/PopularEqubs";
 import { AllEqubs } from "../../../components/ParticipantComponent/AllEqubs";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
 
-
 export const ParticipantDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(true);
-  const [isMyEqubsOpen, setIsMyEqubsOpen] = useState(false);
   
+  // Initialize states based on the saved navigation item in localStorage
+  const [isDashboardOpen, setIsDashboardOpen] = useState(() => {
+    const savedItem = localStorage.getItem('activeNavItem');
+    return !savedItem || savedItem === 'dashboard';
+  });
+  
+  const [isMyEqubsOpen, setIsMyEqubsOpen] = useState(() => {
+    const savedItem = localStorage.getItem('activeNavItem');
+    return savedItem === 'myEqubs';
+  });
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -31,7 +39,7 @@ export const ParticipantDashboard = () => {
       <SideBar 
         onToggle={setIsSidebarOpen} 
         onDashboardToggle={setIsDashboardOpen} 
-        onMyEqubsToggle={setIsMyEqubsOpen}
+        onMyEqubsToggle={setIsMyEqubsOpen} 
       />
 
       {/* Main Content */}
