@@ -10,6 +10,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Edit,
+  Trash2,
 } from "lucide-react";
 
 export const AllEqubs = ({
@@ -18,6 +20,7 @@ export const AllEqubs = ({
   amountFilter,
   setShowPopup,
   locationFilter,
+  showAdminControls = false,
 }) => {
   const [equbs, setEqubs] = useState([]);
   const [joinStatus, setJoinStatus] = useState({});
@@ -256,6 +259,8 @@ export const AllEqubs = ({
     if (status === "Pending" || status === "Accepted") {
       return (
         <div className="flex space-x-2">
+          {status === "Pending" || status === "Accepted" ? (
+          <>
           <button className={getJoinButtonStyle(equbId)} disabled={true}>
             <UserPlus className="h-4 w-4 mr-1" />
             {getJoinButtonText(equbId)}
@@ -268,6 +273,37 @@ export const AllEqubs = ({
             <X className="h-4 w-4 mr-1" />
             {loadingMap[equbId] ? "Processing..." : "Cancel"}
           </button>
+          </>
+        ) : (
+          <button
+            className={getJoinButtonStyle(equbId)}
+            onClick={() => handleJoinEqub(equbId)}
+            disabled={loadingMap[equbId]}
+          >
+            <UserPlus className="h-4 w-4 mr-1" />
+            {getJoinButtonText(equbId)}
+          </button>
+        )}
+
+        {/* Add admin controls conditionally */}
+        {showAdminControls && (
+          <>
+            <button
+              className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center"
+              // onClick={() => handleEditEqub(equbs.find(e => e._id === equbId))}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </button>
+            <button
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center"
+              // onClick={() => handleDeleteEqub(equbId)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </button>
+          </>
+        )}
         </div>
       );
     }
