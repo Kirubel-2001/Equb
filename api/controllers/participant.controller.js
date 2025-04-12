@@ -126,6 +126,57 @@ export const getParticipantStatus = async (req, res) => {
 };
 
 // Update participant status (accept/reject)
+export const updateParticipantStatus = async (req, res) => {
+  try {
+    const { participantId } = req.params;
+    const { status } = req.body;
+
+    if (!["Accepted", "Rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const participant = await Participant.findById(participantId);
+    if (!participant) {
+      return res.status(404).json({ message: "Participant not found" });
+    }
+
+    // Check if user is the Equb creator
+    const equb = await Equb.findById(participant.equb);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+    
+    if (equb.creator.toString() !== req.user.userId) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // If accepting, check if Equb is full
+    if (status === "Accepted") {
+      const acceptedCount = await Participant.countDocuments({
+        equb: participant.equb,
+        status: "Accepted",
+      });
+
+      if (acceptedCount >= equb.numberOfParticipants) {
+        return res.status(400).json({ message: "This Equb is already full" });
+      }
+    }
+
+    participant.status = status;
+    await participant.save();
+
+    res.json({ 
+      message: `Participant ${status.toLowerCase()} successfully`,
+      participant: {
+        id: participant._id,
+        status: participant.status
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 // export const updateParticipantStatus = async (req, res) => {
 //   try {
 //     const { participantId } = req.params;
@@ -169,20 +220,35 @@ export const getParticipantStatus = async (req, res) => {
 // };
 
 // Get my joined Equbs
-// export const getMyJoinedEqubs = async (req, res) => {
-//   try {
-//     const userId = req.user.userId;
+export const getMyJoinedEqubs = async (req, res) => {
+  try {
+    const userId = req.user.userId;
 
-//     const participations = await Participant.find({
-//       user: userId,
-//     }).populate("equb");
+    // Find participations where user is accepted
+    const participations = await Participant.find({
+      user: userId,
+      status: "Accepted"
+    }).populate({
+      path: "equb",
+      populate: {
+        path: "creator",
+        select: "firstName lastName email"
+      }
+    });
 
-//     res.json(participations);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
+    // Format the response to match the structure expected by the frontend
+    const joinedEqubs = participations.map(participation => ({
+      ...participation.equb._doc,
+      participantId: participation._id,
+      joinDate: participation.dateJoined
+    }));
+
+    res.json(joinedEqubs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // Leave an Equb
 export const leaveEqub = async (req, res) => {

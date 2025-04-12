@@ -6,7 +6,9 @@ import {
   getParticipantStatus,
   // updateParticipantStatus,
   // getMyJoinedEqubs,
-  leaveEqub
+  leaveEqub,
+  getMyJoinedEqubs,
+  updateParticipantStatus
 } from "../controllers/participant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -22,13 +24,13 @@ router.get("/equb/:equbId", getEqubParticipants);
 
 // Get participation status for current user in a specific Equb
 router.get("/status/:equbId", getParticipantStatus);
-{/*
+
+// Get my joined Equbs
+router.get("/joined-equbs", getMyJoinedEqubs);
+
 // Update participant status (accept/reject)
 router.patch("/:participantId/status", updateParticipantStatus);
 
-// Get my joined Equbs
-router.get("/my-equbs", getMyJoinedEqubs);
-*/}
 // Leave an Equb
 router.delete("/leave/:equbId", leaveEqub);
     

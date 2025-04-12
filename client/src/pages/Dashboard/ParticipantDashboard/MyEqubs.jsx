@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, TrendingUp, Users, CheckCircle, X } from "lucide-react";
-import { Link } from "react-router-dom";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
 import { MyEqubsList } from "../../../components/ParticipantComponent/MyEqubsList";
 
@@ -66,7 +65,7 @@ export const MyEqubs = () => {
       }));
       
       // Get joined equbs
-      const joinedResponse = await fetch('/api/equb/joined-equbs', {
+      const joinedResponse = await fetch('/api/participant/joined-equbs', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
