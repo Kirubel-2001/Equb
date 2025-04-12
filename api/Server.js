@@ -6,6 +6,8 @@ import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import equbRouter from "./routes/equb.route.js";
 import participantRouter from "./routes/participant.route.js";
+import ratingRouter from "./routes/rating.route.js";
+import complaintRouter from "./routes/complaint.route.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -26,6 +28,8 @@ app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/equb", equbRouter);
 app.use("/api/participant", participantRouter);
+app.use("/api/rating", ratingRouter);
+app.use("/api/complaint", complaintRouter);
 
 app.use((error, req, res, next) => {
   const statusCode = error.statusCode || 500;
