@@ -7,7 +7,6 @@ export const createOrUpdateRating = async (req, res) => {
   try {
     const { equbId, rating, comment } = req.body;
     const userId = req.user.userId;
-
     // Check if Equb exists
     const equb = await Equb.findById(equbId);
     if (!equb) {
@@ -57,7 +56,7 @@ export const createOrUpdateRating = async (req, res) => {
   }
 };
 
-// Get all ratings for an Equb
+// Get all ratings for an Equb 
 export const getEqubRatings = async (req, res) => {
   try {
     const { equbId } = req.params;
@@ -94,9 +93,10 @@ export const getUserRatingForEqub = async (req, res) => {
     const userId = req.user.userId;
 
     const rating = await Rating.findOne({ equb: equbId, user: userId });
-
+   
     if (!rating) {
-      return res.status(404).json({ message: "Rating not found" });
+      return res.status(200).json({ rating: null, message: "No rating found" });
+
     }
 
     res.status(200).json(rating);

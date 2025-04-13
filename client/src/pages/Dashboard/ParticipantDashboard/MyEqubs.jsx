@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, TrendingUp, Users, CheckCircle, X } from "lucide-react";
+import { Calendar, TrendingUp, Users, CheckCircle, X, Star } from "lucide-react";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
 import { MyEqubsList } from "../../../components/ParticipantComponent/MyEqubsList";
 
@@ -11,7 +11,7 @@ export const MyEqubs = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [equbs, setEqubs] = useState([]);
-  
+
   // Toast notification state
   const [toast, setToast] = useState(null);
 
@@ -34,7 +34,7 @@ export const MyEqubs = () => {
       const timer = setTimeout(() => {
         setToast(null);
       }, 3000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [toast]);
@@ -85,7 +85,46 @@ export const MyEqubs = () => {
       }));
       
       const allEqubs = [...createdEqubs, ...joinedEqubs];
-      setEqubs(allEqubs);
+      
+      // Fetch ratings for all equbs
+      const equbsWithRatings = await Promise.all(
+        allEqubs.map(async (equb) => {
+          try {
+            // Get all ratings for the equb
+            const ratingResponse = await fetch(`/api/rating/equb/${equb._id}`);
+            let ratingData = { averageRating: 0, count: 0 };
+            
+            if (ratingResponse.ok) {
+              ratingData = await ratingResponse.json();
+            }
+            
+            // Get the user's rating for the equb
+            const userRatingResponse = await fetch(`/api/rating/user/${equb._id}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              }
+            });
+            
+            let userRating = 0;
+            if (userRatingResponse.ok) {
+              const userRatingData = await userRatingResponse.json();
+              userRating = userRatingData.rating || 0;
+            }
+            
+            return {
+              ...equb,
+              averageRating: ratingData.averageRating || 0,
+              ratingCount: ratingData.count || 0,
+              userRating: userRating
+            };
+          } catch (error) {
+            console.error(`Error fetching rating for equb ${equb._id}:`, error);
+            return equb;
+          }
+        })
+      );
+      
+      setEqubs(equbsWithRatings);
       
       // Calculate stats
       const created = createdEqubs.length;
@@ -127,7 +166,7 @@ export const MyEqubs = () => {
   const handleEqubDeleted = (deletedEqubId) => {
     // Remove the deleted equb from the state
     setEqubs(prevEqubs => prevEqubs.filter(equb => equb._id !== deletedEqubId));
-    
+
     // Update stats
     setStats(prevStats => ({
       ...prevStats,
@@ -136,7 +175,7 @@ export const MyEqubs = () => {
       activeCreated: prevStats.activeCreated - 
         (equbs.find(e => e._id === deletedEqubId && e.status === 'active') ? 1 : 0)
     }));
-    
+
     // Show success notification as a toast
     showToast("Equb deleted successfully");
   };
@@ -145,9 +184,44 @@ export const MyEqubs = () => {
   const handleEqubUpdated = () => {
     // Refetch all equbs to get the latest data
     fetchEqubs();
-    
+
     // Show success notification as a toast
     showToast("Equb updated successfully");
+  };
+
+  // Handle rating submitted
+  const handleRatingSubmitted = (equbId, rating) => {
+    setEqubs(prevEqubs => prevEqubs.map(equb => {
+      if (equb._id === equbId) {
+        const totalRating = (equb.averageRating * equb.ratingCount) || 0;
+        let newCount, newAverage;
+        
+        if (!equb.userRating) {
+          // New rating
+          newCount = (equb.ratingCount || 0) + 1;
+          newAverage = (totalRating + rating) / newCount;
+        } else {
+          // Update existing rating
+          newCount = equb.ratingCount || 1;
+          newAverage = (totalRating - equb.userRating + rating) / newCount;
+        }
+        
+        return {
+          ...equb,
+          userRating: rating,
+          averageRating: newAverage,
+          ratingCount: newCount
+        };
+      }
+      return equb;
+    }));
+    
+    showToast("Rating submitted successfully");
+  };
+
+  // Handle complaint submitted
+  const handleComplaintSubmitted = (equbId) => {
+    showToast("Complaint submitted successfully");
   };
 
   const formatDate = (dateString) => {
@@ -189,7 +263,7 @@ export const MyEqubs = () => {
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -369,6 +443,8 @@ export const MyEqubs = () => {
             showAdminControls={true}
             onEqubDeleted={handleEqubDeleted}
             onEqubUpdated={handleEqubUpdated}
+            onRatingSubmitted={handleRatingSubmitted}
+            onComplaintSubmitted={handleComplaintSubmitted}
           />
         )}
       </div>
