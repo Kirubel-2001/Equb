@@ -8,6 +8,10 @@ import equbRouter from "./routes/equb.route.js";
 import participantRouter from "./routes/participant.route.js";
 import ratingRouter from "./routes/rating.route.js";
 import complaintRouter from "./routes/complaint.route.js";
+import attendanceRouter from "./routes/attendance.route.js";
+import announcementRouter from "./routes/announcement.route.js";
+import cycleRouter from "./routes/cycle.route.js";
+import winnerRouter from "./routes/winner.route.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -30,6 +34,10 @@ app.use("/api/equb", equbRouter);
 app.use("/api/participant", participantRouter);
 app.use("/api/rating", ratingRouter);
 app.use("/api/complaint", complaintRouter);
+app.use("/api/attendance", attendanceRouter);
+app.use("/api/announcement", announcementRouter);
+app.use("/api/cycle", cycleRouter);
+app.use("/api/winner", winnerRouter);
 
 app.use((error, req, res, next) => {
   const statusCode = error.statusCode || 500;
