@@ -1,46 +1,109 @@
 import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, CheckCircle, AlertCircle, Clock, ArrowRight } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, Clock, ArrowRight, Trophy } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [userEqubs, setUserEqubs] = useState([]);
 
   useEffect(() => {
-    fetchNotifications();
+    fetchUserEqubs();
   }, []);
 
-  const fetchNotifications = async () => {
-    setLoading(true);
+  useEffect(() => {
+    if (userEqubs.length > 0) {
+      fetchNotifications();
+    }
+  }, [userEqubs]);
+
+  // First fetch the equbs the user participates in
+  const fetchUserEqubs = async () => {
     try {
-      const response = await fetch("/api/announcement", {
+      const response = await fetch("/api/participant/joined-equbs", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
       
       if (!response.ok) {
-        throw new Error("Failed to fetch notifications");
+        throw new Error("Failed to fetch user equbs");
       }
       
-      const data = await response.json();
+      const equbData = await response.json();
+      setUserEqubs(equbData);
+    } catch (error) {
+      console.error("Failed to fetch user equbs:", error);
+      setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      // Fetch announcements
+      const announcementResponse = await fetch("/api/announcement", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!announcementResponse.ok) {
+        throw new Error("Failed to fetch announcement notifications");
+      }
+      
+      const announcementData = await announcementResponse.json();
+      
+      // Fetch winners for each equb the user participates in
+      const winnersPromises = userEqubs.map(equb => 
+        fetch(`/api/winner/equb/${equb._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+        .then(res => res.ok ? res.json() : [])
+      );
+      
+      const winnersResults = await Promise.all(winnersPromises);
+      const winnersData = winnersResults.flat();
       
       // Transform the announcements into notification format
-      const notificationsData = data.map(announcement => ({
+      const announcementNotifications = announcementData.map(announcement => ({
         id: announcement._id,
         equbName: announcement.equb?.name || "Unknown Equb",
         message: announcement.message,
-        type: "announcement", // Default type
+        type: "announcement", 
         dateCreated: new Date(announcement.dateCreated),
-        isRead: announcement.isRead, // Use the isRead status from the server
-        announcementId: announcement._id, // Keep reference to original ID
-        equbId: announcement.equb?._id, // Store equb ID for marking all as read
+        isRead: announcement.isRead,
+        announcementId: announcement._id,
+        equbId: announcement.equb?._id,
       }));
       
-      setNotifications(notificationsData);
+      // Transform winners into notification format
+      const winnerNotifications = winnersData.map(winner => ({
+        id: `winner-${winner._id}`,
+        equbName: winner.equb?.name || "Unknown Equb",
+        message: `${winner.user.firstName} ${winner.user.lastName} has won cycle ${winner.cycleNumber} of ${winner.amountWon.toLocaleString()} birr!`,
+        type: "winner",
+        dateCreated: new Date(winner.dateWon),
+        isRead: winner.viewedBy?.includes(localStorage.getItem("userId")) || false,
+        winnerId: winner._id,
+        equbId: winner.equb?._id,
+        cycleNumber: winner.cycleNumber,
+        amountWon: winner.amountWon,
+        winnerName: `${winner.user.firstName} ${winner.user.lastName}`
+      }));
+      
+      // Combine all notifications and sort by date
+      const allNotifications = [
+        ...announcementNotifications,
+        ...winnerNotifications
+      ].sort((a, b) => b.dateCreated - a.dateCreated);
+      
+      setNotifications(allNotifications);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     } finally {
@@ -50,25 +113,33 @@ export const Notifications = () => {
 
   const markAsRead = async (id) => {
     try {
-      // Find the notification and get its original announcement ID
+      // Find the notification 
       const notification = notifications.find(n => n.id === id);
       
-      if (notification && notification.announcementId && !notification.isRead) {
+      if (notification && !notification.isRead) {
         // Update UI immediately for better UX
-        setNotifications(notifications.map(notification => 
-          notification.id === id ? { ...notification, isRead: true } : notification
+        setNotifications(notifications.map(n => 
+          n.id === id ? { ...n, isRead: true } : n
         ));
         
-        // Call the API to mark the announcement as read
-        const response = await fetch(`/api/announcement/${notification.announcementId}/read`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error("Failed to mark notification as read");
+        // Call the appropriate API based on notification type
+        if (notification.type === "announcement" && notification.announcementId) {
+          // Mark announcement as read
+          const response = await fetch(`/api/announcement/${notification.announcementId}/read`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error("Failed to mark announcement as read");
+          }
+        } else if (notification.type === "winner" && notification.winnerId) {
+          // Note: Since there's no endpoint for marking winners as viewed in the provided routes,
+          // we'll need to update the backend or handle this differently
+          console.log("Mark winner notification as read:", notification.winnerId);
+          // For now, we'll keep the UI update but not make a backend call
         }
       }
     } catch (error) {
@@ -80,22 +151,27 @@ export const Notifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      // Group notifications by equbId
-      const equbGroups = notifications.reduce((groups, notification) => {
-        if (notification.equbId && !notification.isRead) {
-          if (!groups[notification.equbId]) {
-            groups[notification.equbId] = [];
+      // Group notifications by type and equbId
+      const announcementsByEqub = {};
+      
+      notifications.forEach(notification => {
+        if (!notification.isRead) {
+          if (notification.type === "announcement" && notification.equbId) {
+            if (!announcementsByEqub[notification.equbId]) {
+              announcementsByEqub[notification.equbId] = [];
+            }
+            announcementsByEqub[notification.equbId].push(notification);
           }
-          groups[notification.equbId].push(notification);
+          // Note: Since there's no endpoint for marking winners as viewed in bulk,
+          // we'll just handle announcements here
         }
-        return groups;
-      }, {});
+      });
       
       // Update UI immediately
       setNotifications(notifications.map(notification => ({ ...notification, isRead: true })));
       
-      // Make API calls for each equb
-      const promises = Object.keys(equbGroups).map(equbId => 
+      // Make API calls for announcements by equb
+      const announcementPromises = Object.keys(announcementsByEqub).map(equbId => 
         fetch(`/api/announcement/equb/${equbId}/read-all`, {
           method: 'POST',
           headers: {
@@ -104,7 +180,8 @@ export const Notifications = () => {
         })
       );
       
-      const results = await Promise.all(promises);
+      // Combine all promises
+      const results = await Promise.all(announcementPromises);
       
       // Check if any request failed
       const hasError = results.some(response => !response.ok);
@@ -125,16 +202,12 @@ export const Notifications = () => {
     }
     
     // Navigate to the appropriate page based on notification type
-    if (notification.type === "announcement" && notification.announcementId) {
+    if (notification.type === "announcement" && notification.equbId) {
       // Navigate to announcement detail page
-      // For example: history.push(`/equbs/${notification.equbId}/announcements/${notification.announcementId}`);
-      console.log("Viewing details for announcement:", notification.announcementId);
-    } else if (notification.type === "winner") {
-      // Navigate to winner details
-      console.log("Viewing details for winner notification");
-    } else if (notification.type === "payment") {
-      // Navigate to payment details
-      console.log("Viewing details for payment notification");
+      window.location.href = `/equbs/${notification.equbId}/announcements`;
+    } else if (notification.type === "winner" && notification.equbId) {
+      // Navigate to winner details in the equb
+      window.location.href = `/equbs/${notification.equbId}/winners`;
     }
   };
 
@@ -149,13 +222,28 @@ export const Notifications = () => {
   const getNotificationIcon = (type) => {
     switch(type) {
       case "winner":
-        return <CheckCircle className="h-6 w-6 text-green-500" />;
+        return <Trophy className="h-6 w-6 text-yellow-500" />;
       case "payment":
         return <Clock className="h-6 w-6 text-orange-500" />;
       case "announcement":
         return <AlertCircle className="h-6 w-6 text-blue-500" />;
       default:
         return <Bell className="h-6 w-6 text-gray-500" />;
+    }
+  };
+  
+  const getNotificationColor = (type, isRead) => {
+    if (isRead) return "bg-gray-50";
+    
+    switch(type) {
+      case "winner":
+        return "bg-yellow-50";
+      case "payment":
+        return "bg-orange-50";
+      case "announcement":
+        return "bg-blue-50";
+      default:
+        return "bg-gray-50";
     }
   };
 
@@ -188,7 +276,7 @@ export const Notifications = () => {
 
       {/* Filter tabs */}
       <div className="flex space-x-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-        {["all", "unread", "winner", "payment", "announcement"].map((filter) => (
+        {["all", "unread", "winner", "announcement"].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
@@ -220,7 +308,7 @@ export const Notifications = () => {
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
                 className={`p-4 rounded-xl flex items-start gap-4 transform transition-all duration-200 ${
-                  notification.isRead ? "bg-gray-50" : "bg-blue-50"
+                  getNotificationColor(notification.type, notification.isRead)
                 }`}
                 onClick={() => markAsRead(notification.id)}
               >
@@ -229,8 +317,13 @@ export const Notifications = () => {
                 </div>
                 <div className="flex-grow">
                   <div className="flex justify-between">
-                    <h3 className={`font-medium ${notification.isRead ? "text-gray-800" : "text-blue-800"}`}>
+                    <h3 className={`font-medium ${notification.isRead ? "text-gray-800" : notification.type === "winner" ? "text-yellow-800" : "text-blue-800"}`}>
                       {notification.equbName}
+                      {notification.type === "winner" && notification.cycleNumber && (
+                        <span className="ml-2 text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">
+                          Cycle {notification.cycleNumber}
+                        </span>
+                      )}
                     </h3>
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(notification.dateCreated, { addSuffix: true })}
@@ -239,6 +332,12 @@ export const Notifications = () => {
                   <p className={`text-sm mt-1 ${notification.isRead ? "text-gray-600" : "text-gray-800"}`}>
                     {notification.message}
                   </p>
+                  
+                  {notification.type === "winner" && notification.amountWon && (
+                    <p className="text-sm font-medium text-green-600 mt-1">
+                      Amount: {notification.amountWon.toLocaleString()} birr
+                    </p>
+                  )}
                   
                   <div className="mt-2 flex justify-end">
                     <button 
