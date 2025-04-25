@@ -5,75 +5,137 @@ import { Bell, CheckCircle, AlertCircle, Clock, ArrowRight } from "lucide-react"
 import { formatDistanceToNow } from "date-fns";
 
 export const Notifications = () => {
-  // Mock notifications data - in a real app, you'd fetch this from your API
   const [notifications, setNotifications] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate fetching notifications from an API
-    const fetchNotifications = async () => {
-      setLoading(true);
-      // In a real implementation, this would be an API call
-      setTimeout(() => {
-        const mockNotifications = [
-          {
-            id: 1,
-            equbName: "Monthly Savings Equb",
-            message: "Congratulations! You've been selected as this month's winner!",
-            type: "winner",
-            dateCreated: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-            isRead: false,
-          },
-          {
-            id: 2,
-            equbName: "Weekly Community Equb",
-            message: "Payment reminder: Please submit your weekly contribution of 1000 Birr by Friday.",
-            type: "payment",
-            dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
-            isRead: true,
-          },
-          {
-            id: 3,
-            equbName: "Neighborhood Equb",
-            message: "The next meeting will be held at Community Center on Sunday at 3 PM.",
-            type: "announcement",
-            dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-            isRead: false,
-          },
-          {
-            id: 4,
-            equbName: "Family Equb",
-            message: "Welcome to our Equb! The first lottery will be held next Monday.",
-            type: "announcement",
-            dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-            isRead: true,
-          },
-          {
-            id: 5,
-            equbName: "Monthly Savings Equb",
-            message: "The next winner will be announced on the 30th of this month.",
-            type: "announcement",
-            dateCreated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5), // 5 days ago
-            isRead: true,
-          }
-        ];
-        setNotifications(mockNotifications);
-        setLoading(false);
-      }, 1000);
-    };
-
     fetchNotifications();
   }, []);
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id ? { ...notification, isRead: true } : notification
-    ));
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/announcement", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+      }
+      
+      const data = await response.json();
+      
+      // Transform the announcements into notification format
+      const notificationsData = data.map(announcement => ({
+        id: announcement._id,
+        equbName: announcement.equb?.name || "Unknown Equb",
+        message: announcement.message,
+        type: "announcement", // Default type
+        dateCreated: new Date(announcement.dateCreated),
+        isRead: announcement.isRead, // Use the isRead status from the server
+        announcementId: announcement._id, // Keep reference to original ID
+        equbId: announcement.equb?._id, // Store equb ID for marking all as read
+      }));
+      
+      setNotifications(notificationsData);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(notification => ({ ...notification, isRead: true })));
+  const markAsRead = async (id) => {
+    try {
+      // Find the notification and get its original announcement ID
+      const notification = notifications.find(n => n.id === id);
+      
+      if (notification && notification.announcementId && !notification.isRead) {
+        // Update UI immediately for better UX
+        setNotifications(notifications.map(notification => 
+          notification.id === id ? { ...notification, isRead: true } : notification
+        ));
+        
+        // Call the API to mark the announcement as read
+        const response = await fetch(`/api/announcement/${notification.announcementId}/read`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to mark notification as read");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+      // If the API call fails, refresh to get the accurate state
+      fetchNotifications();
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      // Group notifications by equbId
+      const equbGroups = notifications.reduce((groups, notification) => {
+        if (notification.equbId && !notification.isRead) {
+          if (!groups[notification.equbId]) {
+            groups[notification.equbId] = [];
+          }
+          groups[notification.equbId].push(notification);
+        }
+        return groups;
+      }, {});
+      
+      // Update UI immediately
+      setNotifications(notifications.map(notification => ({ ...notification, isRead: true })));
+      
+      // Make API calls for each equb
+      const promises = Object.keys(equbGroups).map(equbId => 
+        fetch(`/api/announcement/equb/${equbId}/read-all`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      
+      // Check if any request failed
+      const hasError = results.some(response => !response.ok);
+      if (hasError) {
+        throw new Error("Failed to mark all notifications as read");
+      }
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+      // If any API call fails, refresh to get the accurate state
+      fetchNotifications();
+    }
+  };
+  
+  const handleViewDetails = (notification) => {
+    // Mark as read when viewing details
+    if (!notification.isRead) {
+      markAsRead(notification.id);
+    }
+    
+    // Navigate to the appropriate page based on notification type
+    if (notification.type === "announcement" && notification.announcementId) {
+      // Navigate to announcement detail page
+      // For example: history.push(`/equbs/${notification.equbId}/announcements/${notification.announcementId}`);
+      console.log("Viewing details for announcement:", notification.announcementId);
+    } else if (notification.type === "winner") {
+      // Navigate to winner details
+      console.log("Viewing details for winner notification");
+    } else if (notification.type === "payment") {
+      // Navigate to payment details
+      console.log("Viewing details for payment notification");
+    }
   };
 
   const filteredNotifications = notifications.filter(notification => {
@@ -179,7 +241,13 @@ export const Notifications = () => {
                   </p>
                   
                   <div className="mt-2 flex justify-end">
-                    <button className="flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium">
+                    <button 
+                      className="flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent also triggering markAsRead
+                        handleViewDetails(notification);
+                      }}
+                    >
                       View details <ArrowRight className="h-3 w-3 ml-1" />
                     </button>
                   </div>

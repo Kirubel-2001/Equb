@@ -1,5 +1,4 @@
-// SideBar.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import {
@@ -16,7 +15,45 @@ import { Link } from "react-router-dom";
 
 export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [notificationsCount, setNotificationsCount] = useState(3);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch notification count
+  const fetchNotificationCount = async () => {
+    setLoading(true);
+    try {
+      // Fetch all announcements from the server with read status
+      const response = await fetch("/api/announcement", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch notifications");
+      }
+      
+      const data = await response.json();
+      
+      // Count unread notifications
+      const unreadCount = data.filter(notification => !notification.isRead).length;
+      setNotificationsCount(unreadCount);
+    } catch (error) {
+      console.error("Failed to fetch notification count:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch count when component mounts
+    fetchNotificationCount();
+    
+    // Set up an interval to refresh the count periodically
+    const interval = setInterval(fetchNotificationCount, 60000); // Refresh every minute
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -24,6 +61,8 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
   };
 
   const handleItemClick = (item) => {
+    // If navigating to notifications, we could reset the count
+    // but it's better to wait for the actual read status from the server
     onNavigate(item);
   };
 
@@ -121,12 +160,13 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
                 } transition relative`}
               >
                 <Bell className="h-5 w-5 flex-shrink-0" />
-                {notificationsCount > 0 && (
+                {!loading && notificationsCount > 0 && (
                   <span className="absolute top-2 left-5 transform translate-x-1 -translate-y-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                     {notificationsCount}
                   </span>
                 )}
                 {isSidebarOpen && <span className="ml-3">Notifications</span>}
+                
               </a>
             </li>
             <li>
