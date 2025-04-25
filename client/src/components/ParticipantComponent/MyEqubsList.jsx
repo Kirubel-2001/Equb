@@ -15,7 +15,10 @@ import {
   Star,
   MessageCircle,
   AlertCircle,
-  Check
+  Check,
+  Megaphone,
+  Calendar,
+  MoreVertical
 } from "lucide-react";
 import {CreateEqub} from "./CreateEqub";
 
@@ -37,6 +40,21 @@ export const MyEqubsList = ({
   // States for delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [equbToDelete, setEqubToDelete] = useState(null);
+  // States for announcement modal
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const [equbToAnnounce, setEqubToAnnounce] = useState(null);
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementLoading, setAnnouncementLoading] = useState(false);
+  const [announcementError, setAnnouncementError] = useState("");
+  const [announcementSuccess, setAnnouncementSuccess] = useState(false);
+  // Announcements states
+  const [equbAnnouncements, setEqubAnnouncements] = useState({});
+  const [announcementsLoading, setAnnouncementsLoading] = useState({});
+  const [announcementToEdit, setAnnouncementToEdit] = useState(null);
+  const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
+  const [showDeleteAnnouncementModal, setShowDeleteAnnouncementModal] = useState(false);
+  const [announcementToDelete, setAnnouncementToDelete] = useState(null);
+  const [activeTab, setActiveTab] = useState("details");
   // Rating and complaint states
   const [expandedRatingId, setExpandedRatingId] = useState(null);
   const [expandedComplaintId, setExpandedComplaintId] = useState(null);
@@ -152,11 +170,59 @@ export const MyEqubsList = ({
       }
     });
 
+    // Clear announcement success message after delay
+    if (announcementSuccess) {
+      const timer = setTimeout(() => {
+        setAnnouncementSuccess(false);
+      }, 3000);
+      
+      return () => {
+        clearTimeout(timer);
+        ratingTimers.forEach(timer => clearTimeout(timer));
+        complaintTimers.forEach(timer => clearTimeout(timer));
+      };
+    }
+
     return () => {
       ratingTimers.forEach(timer => clearTimeout(timer));
       complaintTimers.forEach(timer => clearTimeout(timer));
     };
-  }, [ratingSuccess, complaintSuccess]);
+  }, [ratingSuccess, complaintSuccess, announcementSuccess]);
+
+  // Fetch announcements when an equb is selected for details
+  useEffect(() => {
+    if (selectedEqub && activeTab === "announcements") {
+      fetchAnnouncementsForEqub(selectedEqub._id);
+    }
+  }, [selectedEqub, activeTab]);
+
+  const fetchAnnouncementsForEqub = async (equbId) => {
+    if (equbAnnouncements[equbId]) return; // Already fetched
+    
+    setAnnouncementsLoading(prev => ({ ...prev, [equbId]: true }));
+    
+    try {
+      const response = await fetch(`/api/announcement/equb/${equbId}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setEqubAnnouncements(prev => ({
+          ...prev,
+          [equbId]: data
+        }));
+      } else {
+        console.error(`Error fetching announcements for equb ${equbId}`);
+      }
+    } catch (error) {
+      console.error(`Error fetching announcements:`, error);
+    } finally {
+      setAnnouncementsLoading(prev => ({ ...prev, [equbId]: false }));
+    }
+  };
 
   const handleCancelJoin = async (equbId) => {
     setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
@@ -205,6 +271,7 @@ export const MyEqubsList = ({
   // Show details
   const handleShowDetails = (equb) => {
     setSelectedEqub(equb);
+    setActiveTab("details");
     setShowDetailsModal(true);
   };
 
@@ -273,6 +340,169 @@ export const MyEqubsList = ({
       });
     } finally {
       setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
+    }
+  };
+
+  // Show announcement modal
+  const handleShowAnnouncementModal = (equb) => {
+    setEqubToAnnounce(equb);
+    setAnnouncementMessage("");
+    setAnnouncementError("");
+    setAnnouncementSuccess(false);
+    setShowAnnouncementModal(true);
+  };
+
+  // Handle send announcement
+  const handleSendAnnouncement = async () => {
+    if (!equbToAnnounce || !announcementMessage.trim()) {
+      setAnnouncementError("Please enter an announcement message");
+      return;
+    }
+
+    setAnnouncementLoading(true);
+    setAnnouncementError("");
+
+    try {
+      const response = await fetch(`/api/announcement/equb/${equbToAnnounce._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: announcementMessage }),
+      });
+
+      if (response.ok) {
+        setAnnouncementSuccess(true);
+        // Clear the form after successful submission
+        setAnnouncementMessage("");
+        
+        // Clear cached announcements to force a refresh
+        setEqubAnnouncements(prev => {
+          const newState = { ...prev };
+          delete newState[equbToAnnounce._id];
+          return newState;
+        });
+        
+        // Close the modal after a short delay
+        setTimeout(() => {
+          setShowAnnouncementModal(false);
+          setEqubToAnnounce(null);
+        }, 1500);
+      } else {
+        const errorData = await response.json();
+        setAnnouncementError(errorData.message || "Failed to send announcement. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error sending announcement:", error);
+      setAnnouncementError("Failed to send announcement. Please check your connection.");
+    } finally {
+      setAnnouncementLoading(false);
+    }
+  };
+
+  // Handle edit announcement modal
+  const handleShowEditAnnouncementModal = (announcement) => {
+    setAnnouncementToEdit(announcement);
+    setAnnouncementMessage(announcement.message);
+    setAnnouncementError("");
+    setAnnouncementSuccess(false);
+    setShowEditAnnouncementModal(true);
+  };
+
+  // Handle update announcement
+  const handleUpdateAnnouncement = async () => {
+    if (!announcementToEdit || !announcementMessage.trim()) {
+      setAnnouncementError("Please enter an announcement message");
+      return;
+    }
+
+    setAnnouncementLoading(true);
+    setAnnouncementError("");
+
+    try {
+      const response = await fetch(`/api/announcement/${announcementToEdit._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message: announcementMessage }),
+      });
+
+      if (response.ok) {
+        setAnnouncementSuccess(true);
+        
+        // Update the announcements list
+        setEqubAnnouncements(prev => {
+          const equbId = announcementToEdit.equb;
+          const updatedAnnouncements = prev[equbId].map(ann => 
+            ann._id === announcementToEdit._id ? { ...ann, message: announcementMessage } : ann
+          );
+          
+          return {
+            ...prev,
+            [equbId]: updatedAnnouncements
+          };
+        });
+        
+        // Close the modal after a short delay
+        setTimeout(() => {
+          setShowEditAnnouncementModal(false);
+          setAnnouncementToEdit(null);
+          setAnnouncementMessage("");
+        }, 1500);
+      } else {
+        const errorData = await response.json();
+        setAnnouncementError(errorData.message || "Failed to update announcement. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error updating announcement:", error);
+      setAnnouncementError("Failed to update announcement. Please check your connection.");
+    } finally {
+      setAnnouncementLoading(false);
+    }
+  };
+
+  // Show delete announcement confirmation modal
+  const handleShowDeleteAnnouncementConfirmation = (announcement) => {
+    setAnnouncementToDelete(announcement);
+    setShowDeleteAnnouncementModal(true);
+  };
+
+  // Handle delete announcement
+  const handleDeleteAnnouncement = async () => {
+    if (!announcementToDelete) return;
+
+    setAnnouncementLoading(true);
+
+    try {
+      const response = await fetch(`/api/announcement/${announcementToDelete._id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        // Update announcements list
+        setEqubAnnouncements(prev => {
+          const equbId = announcementToDelete.equb;
+          return {
+            ...prev,
+            [equbId]: prev[equbId].filter(ann => ann._id !== announcementToDelete._id)
+          };
+        });
+        
+        // Close the modal
+        setShowDeleteAnnouncementModal(false);
+        setAnnouncementToDelete(null);
+      } else {
+        const errorData = await response.json();
+        console.error("Error deleting announcement:", errorData);
+      }
+    } catch (error) {
+      console.error("Error deleting announcement:", error);
+    } finally {
+      setAnnouncementLoading(false);
     }
   };
 
@@ -422,6 +652,18 @@ export const MyEqubsList = ({
     }
   };
 
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
   // Function to render action buttons based on equb type and status
   const renderActionButtons = (equb) => {
     const equbId = equb._id;
@@ -429,27 +671,34 @@ export const MyEqubsList = ({
     // For created equbs, show admin controls
     if (equb.type === "created" && showAdminControls) {
       return (
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <button
-            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center"
+            className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition flex items-center text-sm"
+            onClick={() => handleShowAnnouncementModal(equb)}
+          >
+            <Megaphone className="h-3.5 w-3.5 mr-1" />
+            Announce
+          </button>
+          <button
+            className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center text-sm"
             onClick={() => handleEditEqub(equb)}
             disabled={loadingMap[equbId]}
           >
-            <Edit className="h-4 w-4 mr-1" />
+            <Edit className="h-3.5 w-3.5 mr-1" />
             Edit
           </button>
           <button
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center"
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center text-sm"
             onClick={() => handleShowDeleteConfirmation(equb)}
             disabled={loadingMap[equbId]}
           >
             {loadingMap[equbId] ? (
               <>
-                <span className="animate-pulse">Processing...</span>
+                <span className="animate-pulse">...</span>
               </>
             ) : (
               <>
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
                 Delete
               </>
             )}
@@ -528,17 +777,17 @@ export const MyEqubsList = ({
             <motion.div
               key={equb._id}
               whileHover={{ scale: 1.01 }}
-              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition flex flex-col"
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 transition flex flex-col dark:bg-gray-800 dark:border-gray-700"
             >
               <div className="mb-4 flex flex-col md:flex-row justify-between">
                 <div>
                   <div className="flex items-center flex-wrap gap-2">
-                    <h4 className="font-bold">{equb.name}</h4>
+                    <h4 className="font-bold dark:text-white">{equb.name}</h4>
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
                         equb.equbType === "Automatic"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                          : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                       }`}
                     >
                       {equb.equbType === "Automatic"
@@ -548,15 +797,15 @@ export const MyEqubsList = ({
                     <span
                       className={`text-xs px-2 py-1 rounded-full ${
                         equb.type === "created"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-purple-100 text-purple-800"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                          : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                       }`}
                     >
                       {equb.type === "created" ? "Created" : "Joined"}
                     </span>
                   </div>
 
-                  <div className="flex items-center text-gray-500 text-sm mt-1">
+                  <div className="flex items-center text-gray-500 text-sm mt-1 dark:text-gray-400">
                     <MapPin className="h-4 w-4 mr-1" />
                     <span>{equb.location}</span>
                   </div>
@@ -565,18 +814,18 @@ export const MyEqubsList = ({
                   {renderRatingStars(equb)}
 
                   <div className="flex flex-wrap gap-3 mt-3">
-                    <div className="text-sm flex items-center text-gray-600">
-                      <Users className="h-4 w-4 mr-1 text-blue-600" />
+                    <div className="text-sm flex items-center text-gray-600 dark:text-gray-300">
+                      <Users className="h-4 w-4 mr-1 text-blue-600 dark:text-blue-400" />
                       {equb.currentParticipants}/{equb.numberOfParticipants} members
                     </div>
 
-                    <div className="text-sm flex items-center text-gray-600">
-                      <DollarSign className="h-4 w-4 mr-1 text-blue-600" />
+                    <div className="text-sm flex items-center text-gray-600 dark:text-gray-300">
+                      <DollarSign className="h-4 w-4 mr-1 text-blue-600 dark:text-blue-400" />
                       {equb.amountPerPerson} ETB
                     </div>
 
-                    <div className="text-sm flex items-center text-gray-600">
-                      <Clock className="h-4 w-4 mr-1 text-blue-600" />
+                    <div className="text-sm flex items-center text-gray-600 dark:text-gray-300">
+                      <Clock className="h-4 w-4 mr-1 text-blue-600 dark:text-blue-400" />
                       {equb.cycle}
                     </div>
                   </div>
@@ -586,10 +835,10 @@ export const MyEqubsList = ({
                       className={`mt-2 text-sm ${
                         joinStatus[equb._id]?.status === "Error" ||
                         joinStatus[equb._id]?.status === "Rejected"
-                          ? "text-red-600"
+                          ? "text-red-600 dark:text-red-400"
                           : joinStatus[equb._id]?.status === "Pending"
-                          ? "text-yellow-600"
-                          : "text-green-600"
+                          ? "text-yellow-600 dark:text-yellow-400"
+                          : "text-green-600 dark:text-green-400"
                       }`}
                     >
                       {joinStatus[equb._id]?.message}
@@ -599,7 +848,7 @@ export const MyEqubsList = ({
 
                 <div className="flex items-center space-x-3 mt-3 md:mt-0">
                   <button
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition"
+                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                     onClick={() => handleShowDetails(equb)}
                   >
                     Details
@@ -616,10 +865,10 @@ export const MyEqubsList = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-gray-50 rounded-lg p-3 mt-2"
+                    className="overflow-hidden bg-gray-50 rounded-lg p-3 mt-2 dark:bg-gray-700"
                   >
                     <div>
-                      <h5 className="font-medium text-sm text-gray-700 mb-2">Rate this Equb</h5>
+                      <h5 className="font-medium text-sm text-gray-700 mb-2 dark:text-gray-200">Rate this Equb</h5>
                       <div className="flex items-center flex-wrap gap-3">
                         <div className="flex items-center space-x-1">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -635,7 +884,7 @@ export const MyEqubsList = ({
                                 className={`h-6 w-6 ${
                                   star <= (hoverRatingMap[equb._id] || ratingMap[equb._id] || 0)
                                     ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
+                                    : "text-gray-300 dark:text-gray-500"
                                 } transition-colors`}
                               />
                             </button>
@@ -643,13 +892,13 @@ export const MyEqubsList = ({
                         </div>
                         
                         {equb.userRating > 0 && !ratingSuccess[equb._id] && (
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm text-gray-600 dark:text-gray-300">
                             You rated this {equb.userRating} out of 5
                           </span>
                         )}
                         
                         {ratingSuccess[equb._id] && (
-                          <span className="text-sm text-green-600 flex items-center">
+                          <span className="text-sm text-green-600 flex items-center dark:text-green-400">
                             <Check className="h-4 w-4 mr-1" />
                             Rating submitted!
                           </span>
@@ -657,7 +906,7 @@ export const MyEqubsList = ({
                       </div>
                       
                       {ratingErrors[equb._id] && (
-                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
                           <AlertCircle className="h-4 w-4 mr-1" />
                           {ratingErrors[equb._id]}
                         </p>
@@ -674,14 +923,14 @@ export const MyEqubsList = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-gray-50 rounded-lg p-3 mt-2"
+                    className="overflow-hidden bg-gray-50 rounded-lg p-3 mt-2 dark:bg-gray-700"
                   >
                     <div>
-                      <h5 className="font-medium text-sm text-gray-700 mb-2">Submit a Complaint</h5>
+                      <h5 className="font-medium text-sm text-gray-700 mb-2 dark:text-gray-200">Submit a Complaint</h5>
                       <textarea
                         value={complaints[equb._id] || ""}
                         onChange={(e) => handleComplaintChange(equb._id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                         rows="2"
                         placeholder="Describe your issue with this Equb..."
                       ></textarea>
@@ -689,14 +938,14 @@ export const MyEqubsList = ({
                       <div className="mt-2 flex items-center justify-between flex-wrap gap-2">
                         <div>
                           {complaintErrors[equb._id] && (
-                            <p className="text-sm text-red-600 flex items-center">
+                            <p className="text-sm text-red-600 flex items-center dark:text-red-400">
                               <AlertCircle className="h-4 w-4 mr-1" />
                               {complaintErrors[equb._id]}
                             </p>
                           )}
                           
                           {complaintSuccess[equb._id] && (
-                            <p className="text-sm text-green-600 flex items-center">
+                            <p className="text-sm text-green-600 flex items-center dark:text-green-400">
                               <Check className="h-4 w-4 mr-1" />
                               Complaint submitted successfully!
                             </p>
@@ -726,8 +975,8 @@ export const MyEqubsList = ({
                 disabled={currentPage === 1}
                 className={`p-2 rounded-lg border ${
                   currentPage === 1
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-blue-600 border-blue-200 hover:bg-blue-50"
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed dark:text-gray-600 dark:border-gray-700"
+                    : "text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
                 }`}
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -748,14 +997,14 @@ export const MyEqubsList = ({
                     if (idx > 0 && number - arr[idx - 1] > 1) {
                       return (
                         <React.Fragment key={`ellipsis-${number}`}>
-                          <span className="px-3 py-1 text-gray-400">...</span>
+                          <span className="px-3 py-1 text-gray-400 dark:text-gray-500">...</span>
                           <button
                             key={number}
                             onClick={() => paginate(number)}
                             className={`px-3 py-1 rounded-lg ${
                               currentPage === number
                                 ? "bg-blue-600 text-white"
-                                : "text-gray-700 hover:bg-gray-100"
+                                : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                             }`}
                           >
                             {number}
@@ -770,7 +1019,7 @@ export const MyEqubsList = ({
                         className={`px-3 py-1 rounded-lg ${
                           currentPage === number
                             ? "bg-blue-600 text-white"
-                            : "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                         }`}
                       >
                         {number}
@@ -784,8 +1033,8 @@ export const MyEqubsList = ({
                 disabled={currentPage === totalPages}
                 className={`p-2 rounded-lg border ${
                   currentPage === totalPages
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-blue-600 border-blue-200 hover:bg-blue-50"
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed dark:text-gray-600 dark:border-gray-700"
+                    : "text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-900/30"
                 }`}
               >
                 <ChevronRight className="h-5 w-5" />
@@ -795,7 +1044,7 @@ export const MyEqubsList = ({
         </div>
       ) : (
         <div className="text-center py-8">
-          <p className="text-gray-500">
+          <p className="text-gray-500 dark:text-gray-400">
             No Equbs found matching your criteria.
           </p>
           <button
@@ -810,26 +1059,26 @@ export const MyEqubsList = ({
       {/* Details Modal */}
       {showDetailsModal && selectedEqub && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Equb Details</h3>
+              <h3 className="text-xl font-bold dark:text-white">Equb Details</h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center flex-wrap gap-2">
-                <h4 className="font-bold text-lg">{selectedEqub.name}</h4>
+            <div className="mb-6">
+              <div className="flex items-center flex-wrap gap-2 mb-3">
+                <h4 className="font-bold text-lg dark:text-white">{selectedEqub.name}</h4>
 
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${
                     selectedEqub.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                   }`}
                 >
                   {selectedEqub.status}
@@ -837,8 +1086,8 @@ export const MyEqubsList = ({
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${
                     selectedEqub.equbType === "Automatic"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
                   }`}
                 >
                   {selectedEqub.equbType === "Automatic"
@@ -848,180 +1097,288 @@ export const MyEqubsList = ({
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${
                     selectedEqub.type === "created"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-purple-100 text-purple-800"
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      : "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
                   }`}
                 >
                   {selectedEqub.type === "created" ? "Created" : "Joined"}
                 </span>
               </div>
 
-              {/* Rating display in details */}
-              <div className="flex items-center">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-5 w-5 ${
-                        star <= Math.round(selectedEqub.averageRating || 0)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <span className="ml-2 text-sm text-gray-600">
-                  {selectedEqub.averageRating ? selectedEqub.averageRating.toFixed(1) : "0.0"} 
-                  ({selectedEqub.ratingCount || 0} ratings)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-gray-700 mb-2">Location</h5>
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>{selectedEqub.location}</span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-gray-700 mb-2">Cycle</h5>
-                  <div className="flex items-center text-gray-600">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>{selectedEqub.cycle}</span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-gray-700 mb-2">Members</h5>
-                  <div className="flex items-center text-gray-600">
-                    <Users className="h-4 w-4 mr-2" />
-                    <span>
-                      {selectedEqub.currentParticipants}/
-                      {selectedEqub.numberOfParticipants} participants
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-gray-700 mb-2">
-                    Amount Per Person
-                  </h5>
-                  <div className="flex items-center text-gray-600">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    <span>{selectedEqub.amountPerPerson} ETB</span>
-                  </div>
+              {/* Tabs */}
+              <div className="border-b border-gray-200 dark:border-gray-700">
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setActiveTab("details")}
+                    className={`px-4 py-2 font-medium text-sm ${
+                      activeTab === "details"
+                        ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    Details
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("announcements")}
+                    className={`px-4 py-2 font-medium text-sm ${
+                      activeTab === "announcements"
+                        ? "border-b-2 border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    Announcements
+                  </button>
                 </div>
               </div>
+            </div>
 
-              {selectedEqub.message && (
-                <div className="mt-4">
-                  <h5 className="font-semibold text-gray-700 mb-2">
-                    Description
-                  </h5>
-                  <p className="text-gray-600">
-                    {selectedEqub.message || "No description provided."}
-                  </p>
+            {/* Tab Content */}
+            {activeTab === "details" && (
+              <div className="space-y-4">
+                {/* Rating display in details */}
+                <div className="flex items-center">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-5 w-5 ${
+                          star <= Math.round(selectedEqub.averageRating || 0)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300 dark:text-gray-500"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                    {selectedEqub.averageRating ? selectedEqub.averageRating.toFixed(1) : "0.0"} 
+                    ({selectedEqub.ratingCount || 0} ratings)
+                  </span>
                 </div>
-              )}
 
-              {/* Rating and Complaint UI in details modal */}
-              {selectedEqub.type === "joined" && (
-                <div className="mt-6 space-y-6">
-                  {/* Rating Section */}
-                  <div>
-                    <h4 className="font-semibold text-gray-700 mb-2">Rate this Equb</h4>
-                    <div className="flex items-center space-x-1">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => handleRatingClick(selectedEqub._id, star)}
-                          onMouseEnter={() => handleRatingHover(selectedEqub._id, star)}
-                          onMouseLeave={() => handleRatingHover(selectedEqub._id, 0)}
-                          className="focus:outline-none"
-                        >
-                          <Star
-                            className={`h-6 w-6 ${
-                              star <= (hoverRatingMap[selectedEqub._id] || ratingMap[selectedEqub._id] || 0)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            } transition-colors`}
-                          />
-                        </button>
-                      ))}
-
-                      {selectedEqub.userRating > 0 && !ratingSuccess[selectedEqub._id] && (
-                        <span className="ml-2 text-sm text-gray-600">
-                          You rated this {selectedEqub.userRating} out of 5
-                        </span>
-                      )}
-                      
-                      {ratingSuccess[selectedEqub._id] && (
-                        <span className="ml-2 text-sm text-green-600 flex items-center">
-                          <Check className="h-4 w-4 mr-1" />
-                          Rating submitted!
-                        </span>
-                      )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Location</h5>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span>{selectedEqub.location}</span>
                     </div>
-                    
-                    {ratingErrors[selectedEqub._id] && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-1" />
-                        {ratingErrors[selectedEqub._id]}
-                      </p>
-                    )}
                   </div>
 
-                  {/* Complaint Section */}
-                  <div>
-                    <h4 className="font-semibold text-gray-700 mb-2">Submit a Complaint</h4>
-                    <textarea
-                      value={complaints[selectedEqub._id] || ""}
-                      onChange={(e) => handleComplaintChange(selectedEqub._id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      rows="3"
-                      placeholder="Describe your issue with this Equb..."
-                    ></textarea>
-                    
-                    <div className="mt-2 flex items-center justify-between">
-                      <div>
-                        {complaintErrors[selectedEqub._id] && (
-                          <p className="text-sm text-red-600 flex items-center">
-                            <AlertCircle className="h-4 w-4 mr-1" />
-                            {complaintErrors[selectedEqub._id]}
-                          </p>
+                  <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Cycle</h5>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span>{selectedEqub.cycle}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Members</h5>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <Users className="h-4 w-4 mr-2" />
+                      <span>
+                        {selectedEqub.currentParticipants}/
+                        {selectedEqub.numberOfParticipants} participants
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">
+                      Amount Per Person
+                    </h5>
+                    <div className="flex items-center text-gray-600 dark:text-gray-300">
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      <span>{selectedEqub.amountPerPerson} ETB</span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedEqub.message && (
+                  <div className="mt-4">
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">
+                      Description
+                    </h5>
+                    <p className="text-gray-600 dark:text-gray-300">
+                      {selectedEqub.message || "No description provided."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Rating and Complaint UI in details modal */}
+                {selectedEqub.type === "joined" && (
+                  <div className="mt-6 space-y-6">
+                    {/* Rating Section */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Rate this Equb</h4>
+                      <div className="flex items-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => handleRatingClick(selectedEqub._id, star)}
+                            onMouseEnter={() => handleRatingHover(selectedEqub._id, star)}
+                            onMouseLeave={() => handleRatingHover(selectedEqub._id, 0)}
+                            className="focus:outline-none"
+                          >
+                            <Star
+                              className={`h-6 w-6 ${
+                                star <= (hoverRatingMap[selectedEqub._id] || ratingMap[selectedEqub._id] || 0)
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300 dark:text-gray-500"
+                              } transition-colors`}
+                            />
+                          </button>
+                        ))}
+
+                        {selectedEqub.userRating > 0 && !ratingSuccess[selectedEqub._id] && (
+                          <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
+                            You rated this {selectedEqub.userRating} out of 5
+                          </span>
                         )}
                         
-                        {complaintSuccess[selectedEqub._id] && (
-                          <p className="text-sm text-green-600 flex items-center">
+                        {ratingSuccess[selectedEqub._id] && (
+                          <span className="ml-2 text-sm text-green-600 flex items-center dark:text-green-400">
                             <Check className="h-4 w-4 mr-1" />
-                            Complaint submitted successfully!
-                          </p>
+                            Rating submitted!
+                          </span>
                         )}
                       </div>
                       
-                      <button
-                        type="button"
-                        onClick={() => handleComplaintSubmit(selectedEqub._id)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                      >
-                        Submit Complaint
-                      </button>
+                      {ratingErrors[selectedEqub._id] && (
+                        <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
+                          <AlertCircle className="h-4 w-4 mr-1" />
+                          {ratingErrors[selectedEqub._id]}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Complaint Section */}
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Submit a Complaint</h4>
+                      <textarea
+                        value={complaints[selectedEqub._id] || ""}
+                        onChange={(e) => handleComplaintChange(selectedEqub._id, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+                        rows="3"
+                        placeholder="Describe your issue with this Equb..."
+                      ></textarea>
+                      
+                      <div className="mt-2 flex items-center justify-between">
+                        <div>
+                          {complaintErrors[selectedEqub._id] && (
+                            <p className="text-sm text-red-600 flex items-center dark:text-red-400">
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              {complaintErrors[selectedEqub._id]}
+                            </p>
+                          )}
+                          
+                          {complaintSuccess[selectedEqub._id] && (
+                            <p className="text-sm text-green-600 flex items-center dark:text-green-400">
+                              <Check className="h-4 w-4 mr-1" />
+                              Complaint submitted successfully!
+                            </p>
+                          )}
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => handleComplaintSubmit(selectedEqub._id)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                        >
+                          Submit Complaint
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              <div className="flex justify-end mt-6">
-                <button
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
-                  onClick={() => setShowDetailsModal(false)}
-                >
-                  Close
-                </button>
+                )}
               </div>
+            )}
+
+            {/* Announcements Tab */}
+            {activeTab === "announcements" && (
+              <div>
+                {selectedEqub.type === "created" && showAdminControls && (
+                  <div className="mb-4">
+                    <button
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center"
+                      onClick={() => handleShowAnnouncementModal(selectedEqub)}
+                    >
+                      <Megaphone className="h-4 w-4 mr-2" />
+                      New Announcement
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {announcementsLoading[selectedEqub._id] ? (
+                    <div className="text-center py-8">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
+                      <p className="mt-2 text-gray-600 dark:text-gray-400">Loading announcements...</p>
+                    </div>
+                  ) : equbAnnouncements[selectedEqub._id] && equbAnnouncements[selectedEqub._id].length > 0 ? (
+                    equbAnnouncements[selectedEqub._id].map(announcement => (
+                      <div key={announcement._id} className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="flex items-center">
+                              <Megaphone className="h-4 w-4 text-purple-500 mr-2" />
+                              <h5 className="font-medium text-gray-800 dark:text-gray-200">
+                                {announcement.createdBy?.firstName || ""} {announcement.createdBy?.lastName || ""}
+                              </h5>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {formatDate(announcement.dateCreated)}
+                            </div>
+                          </div>
+                          
+                          {/* Edit/Delete options (only for creators) */}
+                          {selectedEqub.type === "created" && showAdminControls && (
+                            <div className="relative group">
+                              <button className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600">
+                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </button>
+                              <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg overflow-hidden z-10 invisible group-hover:visible dark:bg-gray-800 border dark:border-gray-700">
+                                <div className="py-1">
+                                  <button 
+                                    onClick={() => handleShowEditAnnouncementModal(announcement)}
+                                    className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
+                                  >
+                                    <Edit className="h-3.5 w-3.5 mr-2" />
+                                    Edit
+                                  </button>
+                                  <button 
+                                    onClick={() => handleShowDeleteAnnouncementConfirmation(announcement)}
+                                    className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center dark:text-red-400 dark:hover:bg-gray-700"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300">{announcement.message}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 dark:text-gray-400">No announcements yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-6">
+              <button
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                onClick={() => setShowDetailsModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -1040,21 +1397,21 @@ export const MyEqubsList = ({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-6 max-w-md w-full mx-4"
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800"
             >
               <div className="text-center mb-4">
-                <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4">
-                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4 dark:bg-red-900">
+                  <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">Delete Equb</h3>
-                <p className="text-gray-600">
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Delete Equb</h3>
+                <p className="text-gray-600 dark:text-gray-300">
                   Are you sure you want to delete <span className="font-semibold">{equbToDelete.name}</span>? This action cannot be undone.
                 </p>
               </div>
               
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
                 <button
-                  className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
                   onClick={() => {
                     setShowDeleteModal(false);
                     setEqubToDelete(null);
@@ -1068,6 +1425,242 @@ export const MyEqubsList = ({
                   disabled={loadingMap[equbToDelete._id]}
                 >
                   {loadingMap[equbToDelete._id] ? (
+                    <span className="inline-block animate-pulse">Deleting...</span>
+                  ) : (
+                    <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Announcement Modal */}
+      <AnimatePresence>
+        {showAnnouncementModal && equbToAnnounce && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Megaphone className="h-5 w-5 text-purple-500 mr-2" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Make Announcement</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAnnouncementModal(false);
+                    setEqubToAnnounce(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <p className="text-gray-600 mb-4 dark:text-gray-300">
+                Send an announcement to all members of <span className="font-semibold">{equbToAnnounce.name}</span>.
+              </p>
+
+              <div className="mb-4">
+                <label htmlFor="announcement" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                  Announcement Message
+                </label>
+                <textarea
+                  id="announcement"
+                  value={announcementMessage}
+                  onChange={(e) => setAnnouncementMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows="4"
+                  placeholder="Type your announcement message here..."
+                ></textarea>
+                
+                {announcementError && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {announcementError}
+                  </p>
+                )}
+                
+                {announcementSuccess && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center dark:text-green-400">
+                    <Check className="h-4 w-4 mr-1" />
+                    Announcement sent successfully!
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setShowAnnouncementModal(false);
+                    setEqubToAnnounce(null);
+                  }}
+                  disabled={announcementLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center"
+                  onClick={handleSendAnnouncement}
+                  disabled={announcementLoading}
+                >
+                  {announcementLoading ? (
+                    <span className="inline-block animate-pulse">Sending...</span>
+                  ) : (
+                    <>
+                      <Megaphone className="h-4 w-4 mr-1" />
+                      Send Announcement
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Announcement Modal */}
+      <AnimatePresence>
+        {showEditAnnouncementModal && announcementToEdit && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center">
+                  <Edit className="h-5 w-5 text-yellow-500 mr-2" />
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Announcement</h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowEditAnnouncementModal(false);
+                    setAnnouncementToEdit(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="edit-announcement" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                  Edit Announcement
+                </label>
+                <textarea
+                  id="edit-announcement"
+                  value={announcementMessage}
+                  onChange={(e) => setAnnouncementMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  rows="4"
+                  placeholder="Edit your announcement message..."
+                ></textarea>
+                
+                {announcementError && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {announcementError}
+                  </p>
+                )}
+                
+                {announcementSuccess && (
+                  <p className="mt-1 text-sm text-green-600 flex items-center dark:text-green-400">
+                    <Check className="h-4 w-4 mr-1" />
+                    Announcement updated successfully!
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setShowEditAnnouncementModal(false);
+                    setAnnouncementToEdit(null);
+                  }}
+                  disabled={announcementLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition flex items-center"
+                  onClick={handleUpdateAnnouncement}
+                  disabled={announcementLoading}
+                >
+                  {announcementLoading ? (
+                    <span className="inline-block animate-pulse">Updating...</span>
+                  ) : (
+                    <>
+                      <Edit className="h-4 w-4 mr-1" />
+                      Update
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Announcement Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteAnnouncementModal && announcementToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800"
+            >
+              <div className="text-center mb-4">
+                <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4 dark:bg-red-900">
+                  <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Delete Announcement</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Are you sure you want to delete this announcement? This action cannot be undone.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
+                <button
+                  className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setShowDeleteAnnouncementModal(false);
+                    setAnnouncementToDelete(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="w-full px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition flex items-center justify-center"
+                  onClick={handleDeleteAnnouncement}
+                  disabled={announcementLoading}
+                >
+                  {announcementLoading ? (
                     <span className="inline-block animate-pulse">Deleting...</span>
                   ) : (
                     <>Delete</>

@@ -1,3 +1,4 @@
+// ParticipantDashboard.jsx
 import React, { useState } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
@@ -10,20 +11,21 @@ import { CreateEqub } from "../../../components/ParticipantComponent/CreateEqub"
 import PopularEqubs from "../../../components/PopularEqubs";
 import { AllEqubs } from "../../../components/ParticipantComponent/AllEqubs";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
+import { Notifications } from "./Notifications";
 
 export const ParticipantDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
-  // Initialize states based on the saved navigation item in localStorage
-  const [isDashboardOpen, setIsDashboardOpen] = useState(() => {
+  // Initialize activeItem from localStorage or default to "dashboard"
+  const [activeItem, setActiveItem] = useState(() => {
     const savedItem = localStorage.getItem('activeNavItem');
-    return !savedItem || savedItem === 'dashboard';
+    return savedItem || "dashboard";
   });
-  
-  const [isMyEqubsOpen, setIsMyEqubsOpen] = useState(() => {
-    const savedItem = localStorage.getItem('activeNavItem');
-    return savedItem === 'myEqubs';
-  });
+
+  // Derived states from activeItem
+  const isDashboardOpen = activeItem === "dashboard";
+  const isMyEqubsOpen = activeItem === "myEqubs";
+  const isNotificationsOpen = activeItem === "notifications";
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,13 +35,19 @@ export const ParticipantDashboard = () => {
   const [amountFilter, setAmountFilter] = useState({ min: "", max: "" });
   const [locationFilter, setLocationFilter] = useState("");
 
+  // Function to handle navigation
+  const handleNavigation = (view) => {
+    setActiveItem(view);
+    localStorage.setItem('activeNavItem', view);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 flex">
       {/* Sidebar */}
       <SideBar 
         onToggle={setIsSidebarOpen} 
-        onDashboardToggle={setIsDashboardOpen} 
-        onMyEqubsToggle={setIsMyEqubsOpen} 
+        onNavigate={handleNavigation}
+        activeItem={activeItem}
       />
 
       {/* Main Content */}
@@ -128,6 +136,9 @@ export const ParticipantDashboard = () => {
 
           {/* My Equbs section */}
           {isMyEqubsOpen && <MyEqubs />}
+          
+          {/* Notifications section */}
+          {isNotificationsOpen && <Notifications />}
           
         </main>
         
