@@ -22,22 +22,54 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
   const fetchNotificationCount = async () => {
     setLoading(true);
     try {
-      // Fetch all announcements from the server with read status
-      const response = await fetch("/api/announcement", {
+      // Fetch user's equbs first (needed for winner notifications)
+      const equbsResponse = await fetch("/api/participant/joined-equbs", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
       
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications");
+      if (!equbsResponse.ok) {
+        throw new Error("Failed to fetch user equbs");
       }
       
-      const data = await response.json();
+      const equbData = await equbsResponse.json();
       
-      // Count unread notifications
-      const unreadCount = data.filter(notification => !notification.isRead).length;
-      setNotificationsCount(unreadCount);
+      // Fetch all announcements from the server with read status
+      const announcementResponse = await fetch("/api/announcement", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!announcementResponse.ok) {
+        throw new Error("Failed to fetch announcement notifications");
+      }
+      
+      const announcementData = await announcementResponse.json();
+      
+      // Count unread announcements
+      const unreadAnnouncementCount = announcementData.filter(notification => !notification.isRead).length;
+      
+      // Fetch winners for each equb the user participates in
+      const winnersPromises = equbData.map((equb) =>
+        fetch(`/api/winner/equb/${equb._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }).then((res) => (res.ok ? res.json() : []))
+      );
+      
+      const winnersResults = await Promise.all(winnersPromises);
+      const winnersData = winnersResults.flat();
+      
+      // Count unread winner notifications
+      const unreadWinnerCount = winnersData.filter(winner => !winner.isRead).length;
+      
+      // Calculate total unread notifications
+      const totalUnreadCount = unreadAnnouncementCount + unreadWinnerCount;
+      
+      setNotificationsCount(totalUnreadCount);
     } catch (error) {
       console.error("Failed to fetch notification count:", error);
     } finally {

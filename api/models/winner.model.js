@@ -24,7 +24,20 @@ const WinnerSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    readBy: [
+      {
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        readAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
+
   { timestamps: true }
 );
 

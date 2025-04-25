@@ -4,6 +4,9 @@ import {
   getWinnersByEqub,
   selectManualWinner,
   selectAutomaticWinner,
+  markWinnerAsRead,
+  markAllWinnersAsRead,
+  getWinnerReadStatus
 } from "../controllers/winner.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -20,5 +23,14 @@ router.post("/equb/:equbId/manual", verifyToken, selectManualWinner);
 
 // Select winner automatically
 router.post("/equb/:equbId/automatic", verifyToken, selectAutomaticWinner);
+
+// Mark a single winner as read
+router.post("/:winnerId/read", verifyToken, markWinnerAsRead);
+
+// Mark all winners in an Equb as read
+router.post("/equb/:equbId/read-all", verifyToken, markAllWinnersAsRead);
+
+// Get read status of winners for a user
+router.get("/equb/:equbId/read-status", verifyToken, getWinnerReadStatus);
 
 export default router;
