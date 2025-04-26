@@ -11,6 +11,9 @@ export const MyEqubs = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [equbs, setEqubs] = useState([]);
+  const [participants, setParticipants] = useState([]);
+  const [selectedEqub, setSelectedEqub] = useState(null);
+  const [participantsView, setParticipantsView] = useState("pending"); // "pending" or "active"
 
   // Toast notification state
   const [toast, setToast] = useState(null);
@@ -25,6 +28,7 @@ export const MyEqubs = () => {
     totalCreated: 0,
     activeCreated: 0,
     totalJoined: 0,
+    pendingRequests: 0,
     nextDue: null,
   });
 
@@ -111,11 +115,27 @@ export const MyEqubs = () => {
               userRating = userRatingData.rating || 0;
             }
             
+            // Get pending request count for equbs created by user
+            let pendingCount = 0;
+            if (equb.isCreator) {
+              const pendingResponse = await fetch(`/api/participant/equb/${equb._id}?status=Pending`, {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                }
+              });
+              
+              if (pendingResponse.ok) {
+                const pendingData = await pendingResponse.json();
+                pendingCount = pendingData.length || 0;
+              }
+            }
+            
             return {
               ...equb,
               averageRating: ratingData.averageRating || 0,
               ratingCount: ratingData.count || 0,
-              userRating: userRating
+              userRating: userRating,
+              pendingCount: pendingCount
             };
           } catch (error) {
             console.error(`Error fetching rating for equb ${equb._id}:`, error);
@@ -126,12 +146,22 @@ export const MyEqubs = () => {
       
       setEqubs(equbsWithRatings);
       
+      // If no equb is selected yet and we have created equbs, select the first one
+      if (!selectedEqub && createdEqubs.length > 0) {
+        setSelectedEqub(createdEqubs[0]._id);
+      }
+      
       // Calculate stats
       const created = createdEqubs.length;
       const activeCreated = createdEqubs.filter(
         (e) => e.status === "active"
       ).length;
       const totalJoined = joinedEqubs.length;
+      
+      // Calculate total pending requests
+      const totalPending = equbsWithRatings
+        .filter(e => e.isCreator)
+        .reduce((sum, equb) => sum + (equb.pendingCount || 0), 0);
 
       // Find next due equb
       const now = new Date();
@@ -143,6 +173,7 @@ export const MyEqubs = () => {
         totalCreated: created,
         activeCreated: activeCreated,
         totalJoined,
+        pendingRequests: totalPending,
         nextDue: upcoming.length > 0 ? upcoming[0] : null,
       });
     } catch (err) {
@@ -153,9 +184,48 @@ export const MyEqubs = () => {
     }
   };
 
+  const fetchParticipants = async () => {
+    if (!selectedEqub) return;
+    
+    setIsLoading(true);
+    try {
+      // Map the UI status values to database status values
+      const status = participantsView === "pending" ? "Pending" : "Accepted";
+      
+      const response = await fetch(`/api/participant/equb/${selectedEqub}?status=${status}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch participants');
+      }
+      
+      const data = await response.json();
+      // Filter participants to only include those with the specified status
+      const filteredParticipants = data.filter(participant => 
+        participant.status === status
+      );
+      
+      setParticipants(filteredParticipants);
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+      showToast("Failed to load participants", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchEqubs();
   }, []);
+  
+  useEffect(() => {
+    if (activeTab === "participants" && selectedEqub) {
+      fetchParticipants();
+    }
+  }, [activeTab, selectedEqub, participantsView]);
 
   // Show toast notification
   const showToast = (message, type = "success") => {
@@ -224,6 +294,60 @@ export const MyEqubs = () => {
     showToast("Complaint submitted successfully");
   };
 
+  // Handle participant status update (accept/reject)
+  const handleParticipantStatusUpdate = async (participantId, status) => {
+    try {
+      // Convert UI status to database status format
+      const dbStatus = status === 'approved' ? 'Accepted' : 'Rejected';
+      
+      const response = await fetch(`/api/participant/${participantId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: dbStatus })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${status} participant`);
+      }
+      
+      // Refresh participants list and equbs data
+      fetchParticipants();
+      fetchEqubs();
+      
+      showToast(`Participant ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
+    } catch (error) {
+      console.error("Error updating participant status:", error);
+      showToast(`Failed to ${status} participant`, "error");
+    }
+  };
+
+  // Handle participant removal
+  const handleParticipantRemoved = async (participantId) => {
+    try {
+      // This requires a new API endpoint to remove a participant from an equb
+      const response = await fetch(`/api/participant/${participantId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to remove participant');
+      }
+      
+      // Refresh participants list
+      fetchParticipants();
+      showToast("Participant removed successfully");
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      showToast("Failed to remove participant", "error");
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -256,6 +380,10 @@ export const MyEqubs = () => {
       (amountFilter.min === "" || equb.amount >= parseInt(amountFilter.min)) &&
       (amountFilter.max === "" || equb.amount <= parseInt(amountFilter.max))
     );
+  };
+
+  const getCreatedEqubs = () => {
+    return equbs.filter(equb => equb.isCreator);
   };
 
   return (
@@ -378,17 +506,19 @@ export const MyEqubs = () => {
           </div>
         </motion.div>
 
-        {/* Search and Filter Row */}
-        <SearchAndFilter
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-          amountFilter={amountFilter}
-          setAmountFilter={setAmountFilter}
-          locationFilter={locationFilter}
-          setLocationFilter={setLocationFilter}
-        />
+        {/* Search and Filter Row - Only show in created and joined tabs */}
+        {activeTab !== "participants" && (
+          <SearchAndFilter
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            activeCategory={activeCategory}
+            setActiveCategory={setActiveCategory}
+            amountFilter={amountFilter}
+            setAmountFilter={setAmountFilter}
+            locationFilter={locationFilter}
+            setLocationFilter={setLocationFilter}
+          />
+        )}
 
         {/* Tabs */}
         <motion.div
@@ -418,34 +548,215 @@ export const MyEqubs = () => {
             >
               Joined
             </button>
+            <button
+              onClick={() => setActiveTab("participants")}
+              className={`py-4 px-6 text-base font-medium transition relative mx-4 ${
+                activeTab === "participants"
+                  ? "text-blue-600 border-b-2 border-blue-600"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Participants
+              {stats.pendingRequests > 0 && (
+                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {stats.pendingRequests}
+                </span>
+              )}
+            </button>
           </div>
         </motion.div>
 
-        {/* Loading, Error and Equbs List */}
-        {isLoading ? (
-          <div className="text-center py-10">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200"></div>
-            <p className="mt-2 text-gray-600">Loading your equbs...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-10">
-            <p className="text-red-500">{error}</p>
-            <button 
-              onClick={() => fetchEqubs()} 
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : (
-          <MyEqubsList
-            equbs={getFilteredEqubs()}
-            showAdminControls={true}
-            onEqubDeleted={handleEqubDeleted}
-            onEqubUpdated={handleEqubUpdated}
-            onRatingSubmitted={handleRatingSubmitted}
-            onComplaintSubmitted={handleComplaintSubmitted}
-          />
+        {/* Participants Management - Only show when participants tab is active */}
+        {activeTab === "participants" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            {/* Equb Selection Dropdown */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Equb:
+              </label>
+              <select
+                value={selectedEqub || ""}
+                onChange={(e) => setSelectedEqub(e.target.value)}
+                className="w-full p-3 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select an Equb</option>
+                {getCreatedEqubs().map(equb => (
+                  <option key={equb._id} value={equb._id}>
+                    {equb.name} {equb.pendingCount > 0 && `(${equb.pendingCount} pending)`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Participant View Toggle */}
+            <div className="flex mb-6">
+              <button
+                onClick={() => setParticipantsView("pending")}
+                className={`flex-1 py-2 text-center font-medium rounded-l-lg ${
+                  participantsView === "pending" 
+                    ? "bg-blue-600 text-white" 
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Pending Requests
+              </button>
+              <button
+                onClick={() => setParticipantsView("active")}
+                className={`flex-1 py-2 text-center font-medium rounded-r-lg ${
+                  participantsView === "active" 
+                    ? "bg-blue-600 text-white" 
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Active Participants
+              </button>
+            </div>
+
+            {selectedEqub ? (
+              isLoading ? (
+                <div className="text-center py-10">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200"></div>
+                  <p className="mt-2 text-gray-600">Loading participants...</p>
+                </div>
+              ) : participants.length === 0 ? (
+                <div className="text-center py-10 bg-white rounded-lg shadow">
+                  <p className="text-gray-600">
+                    {participantsView === "pending" 
+                      ? "No pending join requests." 
+                      : "No active participants for this Equb."}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          User
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Join Date
+                        </th>
+                        {participantsView === "active" && (
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                        )}
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {participants.map((participant) => (
+                        <tr key={participant._id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full flex items-center justify-center">
+                                {participant.user.profilePicture ? (
+                                  <img 
+                                    src={participant.user.profilePicture} 
+                                    alt="" 
+                                    className="h-10 w-10 rounded-full"
+                                  />
+                                ) : (
+                                  <span className="text-gray-500 text-lg font-medium">
+                                    {participant.user.firstName?.charAt(0).toUpperCase() || "U"}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {participant.user.firstName + " " + participant.user.lastName || "Unknown"}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {participant.user.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(participant.dateJoined)}
+                          </td>
+                          {participantsView === "active" && (
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                {participant.status || "Active"}
+                              </span>
+                            </td>
+                          )}
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {participantsView === "pending" ? (
+                              <>
+                                <button
+                                  onClick={() => handleParticipantStatusUpdate(participant._id, "approved")}
+                                  className="text-green-600 hover:text-green-900 mr-4"
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => handleParticipantStatusUpdate(participant._id, "rejected")}
+                                  className="text-red-600 hover:text-red-900"
+                                >
+                                  Reject
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => handleParticipantRemoved(participant._id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : (
+              <div className="text-center py-10 bg-white rounded-lg shadow">
+                <p className="text-gray-600">Please select an Equb to manage participants.</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Loading, Error and Equbs List - Only show when not in participants tab */}
+        {activeTab !== "participants" && (
+          <>
+            {isLoading ? (
+              <div className="text-center py-10">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-t-blue-500 border-gray-200"></div>
+                <p className="mt-2 text-gray-600">Loading your equbs...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-10">
+                <p className="text-red-500">{error}</p>
+                <button 
+                  onClick={() => fetchEqubs()} 
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                >
+                  Try Again
+                </button>
+              </div>
+            ) : (
+              <MyEqubsList
+                equbs={getFilteredEqubs()}
+                showAdminControls={true}
+                onEqubDeleted={handleEqubDeleted}
+                onEqubUpdated={handleEqubUpdated}
+                onRatingSubmitted={handleRatingSubmitted}
+                onComplaintSubmitted={handleComplaintSubmitted}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

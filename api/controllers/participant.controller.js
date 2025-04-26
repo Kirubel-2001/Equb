@@ -54,6 +54,7 @@ export const joinEqub = async (req, res) => {
 export const getEqubParticipants = async (req, res) => {
   try {
     const { equbId } = req.params;
+    const { status } = req.query; // Get status from query parameters
 
     // Verify the user is the creator of the Equb or an admin
     const equb = await Equb.findById(equbId);
@@ -69,8 +70,16 @@ export const getEqubParticipants = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const participants = await Participant.find({ equb: equbId })
-      .populate("user", "firstName lastName email")
+    // Build query object
+    const query = { equb: equbId };
+    
+    // Add status filter if provided
+    if (status) {
+      query.status = status;
+    }
+
+    const participants = await Participant.find(query)
+      .populate("user", "firstName lastName email profilePicture")
       .sort({ dateJoined: -1 });
 
     res.json(participants);
