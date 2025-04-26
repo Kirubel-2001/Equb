@@ -18,7 +18,9 @@ import {
   Check,
   Megaphone,
   Calendar,
-  MoreVertical
+  MoreVertical,
+  PlayCircle,
+  Gift
 } from "lucide-react";
 import {CreateEqub} from "./CreateEqub";
 
@@ -67,6 +69,16 @@ export const MyEqubsList = ({
   const [complaintSuccess, setComplaintSuccess] = useState({});
   // Participant count state
   const [participantCounts, setParticipantCounts] = useState({});
+  // Winner selection state
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [equbToDrawWinner, setEqubToDrawWinner] = useState(null);
+  const [winnerSelectionLoading, setWinnerSelectionLoading] = useState(false);
+  const [winnerSelectionError, setWinnerSelectionError] = useState("");
+  const [winnerSelectionSuccess, setWinnerSelectionSuccess] = useState(false);
+  // Start cycle state
+  const [startCycleLoading, setStartCycleLoading] = useState({});
+  const [startCycleError, setStartCycleError] = useState({});
+  const [startCycleSuccess, setStartCycleSuccess] = useState({});
   
   const equbsPerPage = 9;
 
@@ -203,6 +215,34 @@ export const MyEqubsList = ({
       }
     });
 
+    // Clear start cycle success messages
+    const startCycleTimers = [];
+    Object.keys(startCycleSuccess).forEach(equbId => {
+      if (startCycleSuccess[equbId]) {
+        const timer = setTimeout(() => {
+          setStartCycleSuccess(prev => ({
+            ...prev,
+            [equbId]: false
+          }));
+        }, 3000);
+        startCycleTimers.push(timer);
+      }
+    });
+
+    // Clear start cycle error messages
+    const startCycleErrorTimers = [];
+    Object.keys(startCycleError).forEach(equbId => {
+      if (startCycleError[equbId]) {
+        const timer = setTimeout(() => {
+          setStartCycleError(prev => ({
+            ...prev,
+            [equbId]: ""
+          }));
+        }, 3000);
+        startCycleErrorTimers.push(timer);
+      }
+    });
+
     // Clear announcement success message after delay
     if (announcementSuccess) {
       const timer = setTimeout(() => {
@@ -213,14 +253,31 @@ export const MyEqubsList = ({
         clearTimeout(timer);
         ratingTimers.forEach(timer => clearTimeout(timer));
         complaintTimers.forEach(timer => clearTimeout(timer));
+        startCycleTimers.forEach(timer => clearTimeout(timer));
+        startCycleErrorTimers.forEach(timer => clearTimeout(timer));
+      };
+    }
+
+    // Clear winner selection success after delay
+    if (winnerSelectionSuccess) {
+      const timer = setTimeout(() => {
+        setWinnerSelectionSuccess(false);
+        setShowWinnerModal(false);
+        setEqubToDrawWinner(null);
+      }, 3000);
+      
+      return () => {
+        clearTimeout(timer);
       };
     }
 
     return () => {
       ratingTimers.forEach(timer => clearTimeout(timer));
       complaintTimers.forEach(timer => clearTimeout(timer));
+      startCycleTimers.forEach(timer => clearTimeout(timer));
+      startCycleErrorTimers.forEach(timer => clearTimeout(timer));
     };
-  }, [ratingSuccess, complaintSuccess, announcementSuccess]);
+  }, [ratingSuccess, complaintSuccess, announcementSuccess, winnerSelectionSuccess, startCycleSuccess, startCycleError]);
 
   // Fetch announcements when an equb is selected for details
   useEffect(() => {
@@ -577,6 +634,88 @@ export const MyEqubsList = ({
     }
   };
 
+  // Handle start cycle button
+  const handleStartCycle = async (equbId) => {
+    setStartCycleLoading(prev => ({ ...prev, [equbId]: true }));
+    setStartCycleError(prev => ({ ...prev, [equbId]: "" }));
+    
+    try {
+      const response = await fetch(`/api/equb/${equbId}/start-cycle`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setStartCycleSuccess(prev => ({ ...prev, [equbId]: true }));
+        
+        // Notify parent component about update
+        if (onEqubUpdated) {
+          onEqubUpdated();
+        }
+      } else {
+        const errorData = await response.json();
+        setStartCycleError(prev => ({ 
+          ...prev, 
+          [equbId]: errorData.message || "Failed to start cycle. Please try again." 
+        }));
+      }
+    } catch (error) {
+      console.error("Error starting cycle:", error);
+      setStartCycleError(prev => ({ 
+        ...prev, 
+        [equbId]: "Failed to start cycle. Please check your connection." 
+      }));
+    } finally {
+      setStartCycleLoading(prev => ({ ...prev, [equbId]: false }));
+    }
+  };
+
+  // Show winner selection modal
+  const handleShowWinnerModal = (equb) => {
+    setEqubToDrawWinner(equb);
+    setWinnerSelectionError("");
+    setWinnerSelectionSuccess(false);
+    setShowWinnerModal(true);
+  };
+
+  // Handle winner selection
+  const handleSelectWinner = async () => {
+    if (!equbToDrawWinner) return;
+
+    setWinnerSelectionLoading(true);
+    setWinnerSelectionError("");
+
+    try {
+      const response = await fetch(`/api/equb/${equbToDrawWinner._id}/select-winner`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        setWinnerSelectionSuccess(true);
+        
+        // Notify parent component about update
+        if (onEqubUpdated) {
+          onEqubUpdated();
+        }
+      } else {
+        const errorData = await response.json();
+        setWinnerSelectionError(errorData.message || "Failed to select winner. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error selecting winner:", error);
+      setWinnerSelectionError("Failed to select winner. Please check your connection.");
+    } finally {
+      setWinnerSelectionLoading(false);
+    }
+  };
+
   // Handle edit modal close
   const handleEditModalClose = (success) => {
     setShowEditModal(false);
@@ -758,6 +897,35 @@ export const MyEqubsList = ({
     if (equb.type === "created" && showAdminControls) {
       return (
         <div className="flex flex-wrap gap-2">
+          {/* Start Cycle or Choose Winner button based on equb type */}
+          {equb.equbType === "Automatic" && (
+            <button
+              className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center text-sm"
+              onClick={() => handleStartCycle(equbId)}
+              disabled={startCycleLoading[equbId]}
+            >
+              {startCycleLoading[equbId] ? (
+                <span className="animate-pulse">Starting...</span>
+              ) : (
+                <>
+                  <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                  Start Cycle
+                </>
+              )}
+            </button>
+          )}
+          
+          {equb.equbType === "Special" && (
+            <button
+              className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center text-sm"
+              onClick={() => handleShowWinnerModal(equb)}
+              disabled={winnerSelectionLoading}
+            >
+              <Gift className="h-3.5 w-3.5 mr-1" />
+              Choose Winner
+            </button>
+          )}
+          
           <button
             className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition flex items-center text-sm"
             onClick={() => handleShowAnnouncementModal(equb)}
@@ -928,6 +1096,21 @@ export const MyEqubsList = ({
                       }`}
                     >
                       {joinStatus[equb._id]?.message}
+                    </div>
+                  )}
+                  
+                  {/* Start Cycle status messages */}
+                  {startCycleSuccess[equb._id] && (
+                    <div className="mt-2 text-sm text-green-600 flex items-center dark:text-green-400">
+                      <Check className="h-4 w-4 mr-1" />
+                      Cycle started successfully!
+                    </div>
+                  )}
+                  
+                  {startCycleError[equb._id] && (
+                    <div className="mt-2 text-sm text-red-600 flex items-center dark:text-red-400">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {startCycleError[equb._id]}
                     </div>
                   )}
                 </div>
@@ -1190,6 +1373,39 @@ export const MyEqubsList = ({
                   {selectedEqub.type === "created" ? "Created" : "Joined"}
                 </span>
               </div>
+
+              {/* Admin buttons in details modal */}
+              {selectedEqub.type === "created" && showAdminControls && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {selectedEqub.equbType === "Automatic" && (
+                    <button
+                      className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center text-sm"
+                      onClick={() => handleStartCycle(selectedEqub._id)}
+                      disabled={startCycleLoading[selectedEqub._id]}
+                    >
+                      {startCycleLoading[selectedEqub._id] ? (
+                        <span className="animate-pulse">Starting...</span>
+                      ) : (
+                        <>
+                          <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                          Start Cycle
+                        </>
+                      )}
+                    </button>
+                  )}
+                  
+                  {selectedEqub.equbType === "Manual" && (
+                    <button
+                      className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition flex items-center text-sm"
+                      onClick={() => handleShowWinnerModal(selectedEqub)}
+                      disabled={winnerSelectionLoading}
+                    >
+                      <Gift className="h-3.5 w-3.5 mr-1" />
+                      Choose Winner
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Tabs */}
               <div className="border-b border-gray-200 dark:border-gray-700">
@@ -1749,6 +1965,74 @@ export const MyEqubsList = ({
                     <span className="inline-block animate-pulse">Deleting...</span>
                   ) : (
                     <>Delete</>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Winner Selection Modal */}
+      <AnimatePresence>
+        {showWinnerModal && equbToDrawWinner && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800"
+            >
+              <div className="text-center mb-4">
+                <div className="mx-auto w-14 h-14 flex items-center justify-center bg-green-100 rounded-full mb-4 dark:bg-green-900">
+                  <Gift className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Select Winner</h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  You are about to randomly select a winner for <span className="font-semibold">{equbToDrawWinner.name}</span>. 
+                  This will advance the Equb to the next cycle.
+                </p>
+              </div>
+              
+              {winnerSelectionError && (
+                <div className="mb-4 text-center text-red-600 flex items-center justify-center dark:text-red-400">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  {winnerSelectionError}
+                </div>
+              )}
+              
+              {winnerSelectionSuccess && (
+                <div className="mb-4 text-center text-green-600 flex items-center justify-center dark:text-green-400">
+                  <Check className="h-5 w-5 mr-2" />
+                  Winner selected successfully!
+                </div>
+              )}
+              
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
+                <button
+                  className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                  onClick={() => {
+                    setShowWinnerModal(false);
+                    setEqubToDrawWinner(null);
+                  }}
+                  disabled={winnerSelectionLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center justify-center"
+                  onClick={handleSelectWinner}
+                  disabled={winnerSelectionLoading || winnerSelectionSuccess}
+                >
+                  {winnerSelectionLoading ? (
+                    <span className="inline-block animate-pulse">Selecting...</span>
+                  ) : (
+                    <>Select Winner</>
                   )}
                 </button>
               </div>
