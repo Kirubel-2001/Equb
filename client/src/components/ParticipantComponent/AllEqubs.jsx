@@ -10,6 +10,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Star,
+  StarHalf
 } from "lucide-react";
 
 export const AllEqubs = ({
@@ -28,6 +30,8 @@ export const AllEqubs = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [equbRatings, setEqubRatings] = useState({});
+  const [participantCounts, setParticipantCounts] = useState({});
   const equbsPerPage = 9;
 
   // Fetch equbs on component mount
@@ -52,10 +56,14 @@ export const AllEqubs = ({
         const equbsData = await response.json();
         setEqubs(equbsData);
         
-        // Fetch join status for each equb
+        // Fetch join status, ratings, and participant counts for each equb
         const statusObj = {};
+        const ratingsObj = {};
+        const countsObj = {};
+
         for (const equb of equbsData) {
           try {
+            // Fetch join status
             const statusResponse = await fetch(
               `/api/participant/status/${equb._id}`,
               {
@@ -72,11 +80,46 @@ export const AllEqubs = ({
                 message: statusData.message,
               };
             }
+
+            // Fetch ratings
+            const ratingsResponse = await fetch(
+              `/api/rating/equb/${equb._id}`
+            );
+            if (ratingsResponse.ok) {
+              const ratingsData = await ratingsResponse.json();
+              ratingsObj[equb._id] = {
+                averageRating: ratingsData.averageRating,
+                totalRatings: ratingsData.totalRatings
+              };
+            }
+            
+            // Fetch participant counts using the new API endpoint
+            const countResponse = await fetch(
+              `/api/participant/count/${equb._id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            if (countResponse.ok) {
+              const countData = await countResponse.json();
+              countsObj[equb._id] = {
+                currentParticipants: countData.currentParticipants,
+                totalParticipants: countData.totalParticipants,
+                remainingSpots: countData.remainingSpots,
+                isFull: countData.isFull
+              };
+            }
           } catch (error) {
-            console.error(`Error fetching status for equb ${equb._id}:`, error);
+            console.error(`Error fetching data for equb ${equb._id}:`, error);
           }
         }
+        
         setJoinStatus(statusObj);
+        setEqubRatings(ratingsObj);
+        setParticipantCounts(countsObj);
       } catch (error) {
         console.error("Error fetching Equbs:", error);
         setError("Failed to load equbs. Please try again later.");
@@ -142,6 +185,9 @@ export const AllEqubs = ({
             message: "Join request sent successfully",
           },
         });
+        
+        // Refresh participant count after joining
+        await refreshParticipantCount(equbId);
       } else {
         // If the error is that user already joined
         if (data.status) {
@@ -199,6 +245,9 @@ export const AllEqubs = ({
           },
         });
 
+        // Refresh participant count after leaving
+        await refreshParticipantCount(equbId);
+
         // After a brief delay, remove the message
         setTimeout(() => {
           setJoinStatus((prev) => ({
@@ -229,6 +278,35 @@ export const AllEqubs = ({
       });
     } finally {
       setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
+    }
+  };
+  
+  // Function to refresh participant count for a specific equb
+  const refreshParticipantCount = async (equbId) => {
+    try {
+      const countResponse = await fetch(
+        `/api/participant/count/${equbId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      if (countResponse.ok) {
+        const countData = await countResponse.json();
+        setParticipantCounts((prev) => ({
+          ...prev,
+          [equbId]: {
+            currentParticipants: countData.currentParticipants,
+            totalParticipants: countData.totalParticipants,
+            remainingSpots: countData.remainingSpots,
+            isFull: countData.isFull
+          }
+        }));
+      }
+    } catch (error) {
+      console.error(`Error refreshing participant count for equb ${equbId}:`, error);
     }
   };
 
@@ -278,6 +356,20 @@ export const AllEqubs = ({
   // Function to render join/cancel buttons based on status
   const renderActionButtons = (equbId) => {
     const status = joinStatus[equbId]?.status;
+    const isFull = participantCounts[equbId]?.isFull;
+
+    // If equb is full and user is not already a member, disable join button
+    if (isFull && status !== "Accepted" && status !== "Pending") {
+      return (
+        <button
+          className="px-4 py-2 bg-gray-500 text-white rounded-lg transition flex items-center cursor-not-allowed"
+          disabled={true}
+        >
+          <UserPlus className="h-4 w-4 mr-1" />
+          Full
+        </button>
+      );
+    }
 
     // If pending or accepted, show cancel button
     if (status === "Pending" || status === "Accepted") {
@@ -310,6 +402,48 @@ export const AllEqubs = ({
         {getJoinButtonText(equbId)}
       </button>
     );
+  };
+
+  // Function to render star ratings
+  const renderStarRating = (equbId) => {
+    const rating = equbRatings[equbId]?.averageRating || 0;
+    const totalRatings = equbRatings[equbId]?.totalRatings || 0;
+    
+    // Determine whole stars and half stars
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    return (
+      <div className="flex items-center">
+        <div className="flex text-yellow-400">
+          {[...Array(5)].map((_, i) => {
+            if (i < fullStars) {
+              return <Star key={i} className="h-4 w-4 fill-current" />;
+            } else if (i === fullStars && hasHalfStar) {
+              return <StarHalf key={i} className="h-4 w-4 fill-current" />;
+            } else {
+              return <Star key={i} className="h-4 w-4 text-gray-300" />;
+            }
+          })}
+        </div>
+        <span className="ml-1 text-sm text-gray-600">
+          {rating.toFixed(1)} ({totalRatings})
+        </span>
+      </div>
+    );
+  };
+  
+  // Helper function to get participant count display
+  const getParticipantCountDisplay = (equbId) => {
+    // Check if we have fetched participant count from API
+    if (participantCounts[equbId]) {
+      const { currentParticipants, totalParticipants } = participantCounts[equbId];
+      return `${currentParticipants}/${totalParticipants} members`;
+    }
+    
+    // Fallback to equb object data
+    const equb = equbs.find(e => e._id === equbId);
+    return equb ? `${equb.currentParticipants}/${equb.numberOfParticipants} members` : "Loading...";
   };
 
   return (
@@ -365,10 +499,15 @@ export const AllEqubs = ({
                     <span>{equb.location}</span>
                   </div>
 
+                  {/* Rating display */}
+                  <div className="mt-1">
+                    {renderStarRating(equb._id)}
+                  </div>
+
                   <div className="flex flex-wrap gap-3 mt-3">
                     <div className="text-sm flex items-center text-gray-600">
                       <Users className="h-4 w-4 mr-1 text-blue-600" />
-                      {equb.currentParticipants}/{equb.numberOfParticipants} members
+                      {getParticipantCountDisplay(equb._id)}
                     </div>
 
                     <div className="text-sm flex items-center text-gray-600">
@@ -541,6 +680,11 @@ export const AllEqubs = ({
                 </span>
               </div>
 
+              {/* Rating in the modal */}
+              <div className="mt-2">
+                {renderStarRating(selectedEqub._id)}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h5 className="font-semibold text-gray-700 mb-2">Location</h5>
@@ -563,8 +707,7 @@ export const AllEqubs = ({
                   <div className="flex items-center text-gray-600">
                     <Users className="h-4 w-4 mr-2" />
                     <span>
-                      {selectedEqub.currentParticipants}/
-                      {selectedEqub.numberOfParticipants} participants
+                      {getParticipantCountDisplay(selectedEqub._id)}
                     </span>
                   </div>
                 </div>

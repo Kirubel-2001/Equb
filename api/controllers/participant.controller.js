@@ -177,47 +177,6 @@ export const updateParticipantStatus = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-// export const updateParticipantStatus = async (req, res) => {
-//   try {
-//     const { participantId } = req.params;
-//     const { status } = req.body;
-
-//     if (!["Accepted", "Rejected"].includes(status)) {
-//       return res.status(400).json({ message: "Invalid status" });
-//     }
-
-//     const participant = await Participant.findById(participantId);
-//     if (!participant) {
-//       return res.status(404).json({ message: "Participant not found" });
-//     }
-
-//     // Check if user is the Equb creator
-//     const equb = await Equb.findById(participant.equb);
-//     if (equb.creator.toString() !== req.user.userId) {
-//       return res.status(403).json({ message: "Unauthorized" });
-//     }
-
-//     // If accepting, check if Equb is full
-//     if (status === "Accepted") {
-//       const acceptedCount = await Participant.countDocuments({
-//         equb: participant.equb,
-//         status: "Accepted",
-//       });
-
-//       if (acceptedCount >= equb.numberOfParticipants) {
-//         return res.status(400).json({ message: "This Equb is already full" });
-//       }
-//     }
-
-//     participant.status = status;
-//     await participant.save();
-
-//     res.json({ message: `Participant ${status.toLowerCase()} successfully` });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 // Get my joined Equbs
 export const getMyJoinedEqubs = async (req, res) => {
@@ -278,6 +237,39 @@ export const leaveEqub = async (req, res) => {
 
     await Participant.findByIdAndDelete(participant._id);
     res.json({ message: "Successfully left the Equb" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get participant count for an Equb
+export const getEqubParticipantCount = async (req, res) => {
+  try {
+    const { equbId } = req.params;
+
+    // Check if Equb exists
+    const equb = await Equb.findById(equbId);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+
+    // Count accepted participants
+    const acceptedCount = await Participant.countDocuments({
+      equb: equbId,
+      status: "Accepted",
+    });
+
+    // Calculate remaining spots
+    const totalSpots = equb.numberOfParticipants;
+    const remainingSpots = totalSpots - acceptedCount;
+
+    res.json({
+      totalParticipants: totalSpots,
+      currentParticipants: acceptedCount,
+      remainingSpots: remainingSpots,
+      isFull: remainingSpots <= 0
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

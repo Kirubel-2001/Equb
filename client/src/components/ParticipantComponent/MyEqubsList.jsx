@@ -65,19 +65,30 @@ export const MyEqubsList = ({
   const [complaintErrors, setComplaintErrors] = useState({});
   const [ratingSuccess, setRatingSuccess] = useState({});
   const [complaintSuccess, setComplaintSuccess] = useState({});
+  // Participant count state
+  const [participantCounts, setParticipantCounts] = useState({});
   
   const equbsPerPage = 9;
 
-  // Fetch join status on component mount
+  // Fetch join status and participant counts on component mount
   useEffect(() => {
     const fetchJoinStatus = async () => {
       try {
         // Fetch join status for each equb
         const statusObj = {};
+        const countsObj = {};
+        
         for (const equb of equbs) {
           try {
+            // Fetch join status
             const statusResponse = await fetch(
-              `/api/participant/status/${equb._id}`
+              `/api/participant/status/${equb._id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Content-Type': 'application/json'
+                }
+              }
             );
             if (statusResponse.ok) {
               const statusData = await statusResponse.json();
@@ -86,11 +97,33 @@ export const MyEqubsList = ({
                 message: statusData.message,
               };
             }
+            
+            // Fetch participant counts
+            const countResponse = await fetch(
+              `/api/participant/count/${equb._id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            if (countResponse.ok) {
+              const countData = await countResponse.json();
+              countsObj[equb._id] = {
+                currentParticipants: countData.currentParticipants,
+                totalParticipants: countData.totalParticipants,
+                remainingSpots: countData.remainingSpots,
+                isFull: countData.isFull
+              };
+            }
           } catch (error) {
-            console.error(`Error fetching status for equb ${equb._id}:`, error);
+            console.error(`Error fetching data for equb ${equb._id}:`, error);
           }
         }
+        
         setJoinStatus(statusObj);
+        setParticipantCounts(countsObj);
       } catch (error) {
         console.error("Error fetching join status:", error);
       }
@@ -205,6 +238,7 @@ export const MyEqubsList = ({
       const response = await fetch(`/api/announcement/equb/${equbId}`, {
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
       
@@ -231,6 +265,7 @@ export const MyEqubsList = ({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
 
@@ -245,6 +280,9 @@ export const MyEqubsList = ({
             message: "Request canceled successfully",
           },
         });
+        
+        // Refresh participant count after leaving
+        await refreshParticipantCount(equbId);
       } else {
         setJoinStatus({
           ...joinStatus,
@@ -265,6 +303,35 @@ export const MyEqubsList = ({
       });
     } finally {
       setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
+    }
+  };
+  
+  // Function to refresh participant count for a specific equb
+  const refreshParticipantCount = async (equbId) => {
+    try {
+      const countResponse = await fetch(
+        `/api/participant/count/${equbId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      if (countResponse.ok) {
+        const countData = await countResponse.json();
+        setParticipantCounts((prev) => ({
+          ...prev,
+          [equbId]: {
+            currentParticipants: countData.currentParticipants,
+            totalParticipants: countData.totalParticipants,
+            remainingSpots: countData.remainingSpots,
+            isFull: countData.isFull
+          }
+        }));
+      }
+    } catch (error) {
+      console.error(`Error refreshing participant count for equb ${equbId}:`, error);
     }
   };
 
@@ -299,6 +366,7 @@ export const MyEqubsList = ({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
 
@@ -367,6 +435,7 @@ export const MyEqubsList = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ message: announcementMessage }),
       });
@@ -424,6 +493,7 @@ export const MyEqubsList = ({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ message: announcementMessage }),
       });
@@ -479,6 +549,7 @@ export const MyEqubsList = ({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
       });
 
@@ -537,6 +608,7 @@ export const MyEqubsList = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ 
           rating: selectedRating, 
@@ -591,6 +663,7 @@ export const MyEqubsList = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({ message: complaints[equbId], equbId: equbId }),
       });
@@ -662,6 +735,19 @@ export const MyEqubsList = ({
       hour: '2-digit',
       minute: '2-digit'
     }).format(date);
+  };
+  
+  // Helper function to get participant count display
+  const getParticipantCountDisplay = (equbId) => {
+    // Check if we have fetched participant count from API
+    if (participantCounts[equbId]) {
+      const { currentParticipants, totalParticipants } = participantCounts[equbId];
+      return `${currentParticipants}/${totalParticipants} members`;
+    }
+    
+    // Fallback to equb object data
+    const equb = equbs.find(e => e._id === equbId);
+    return equb ? `${equb.currentParticipants}/${equb.numberOfParticipants} members` : "Loading...";
   };
 
   // Function to render action buttons based on equb type and status
@@ -816,7 +902,7 @@ export const MyEqubsList = ({
                   <div className="flex flex-wrap gap-3 mt-3">
                     <div className="text-sm flex items-center text-gray-600 dark:text-gray-300">
                       <Users className="h-4 w-4 mr-1 text-blue-600 dark:text-blue-400" />
-                      {equb.currentParticipants}/{equb.numberOfParticipants} members
+                      {getParticipantCountDisplay(equb._id)}
                     </div>
 
                     <div className="text-sm flex items-center text-gray-600 dark:text-gray-300">
@@ -1177,8 +1263,7 @@ export const MyEqubsList = ({
                     <div className="flex items-center text-gray-600 dark:text-gray-300">
                       <Users className="h-4 w-4 mr-2" />
                       <span>
-                        {selectedEqub.currentParticipants}/
-                        {selectedEqub.numberOfParticipants} participants
+                        {getParticipantCountDisplay(selectedEqub._id)}
                       </span>
                     </div>
                   </div>

@@ -1,14 +1,12 @@
-// routes/participant.routes.js
 import express from "express";
 import {
   joinEqub,
   getEqubParticipants,
   getParticipantStatus,
-  // updateParticipantStatus,
-  // getMyJoinedEqubs,
-  leaveEqub,
   getMyJoinedEqubs,
-  updateParticipantStatus
+  updateParticipantStatus,
+  leaveEqub,
+  getEqubParticipantCount
 } from "../controllers/participant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -33,7 +31,8 @@ router.patch("/:participantId/status", updateParticipantStatus);
 
 // Leave an Equb
 router.delete("/leave/:equbId", leaveEqub);
-    
 
+// Get participant count for an Equb
+router.get("/count/:equbId", getEqubParticipantCount);
 
 export default router;
