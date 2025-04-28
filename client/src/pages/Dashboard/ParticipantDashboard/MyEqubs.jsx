@@ -328,7 +328,7 @@ export const MyEqubs = () => {
   const handleParticipantRemoved = async (participantId) => {
     try {
       // This requires a new API endpoint to remove a participant from an equb
-      const response = await fetch(`/api/participant/${participantId}`, {
+      const response = await fetch(`/api/participant/${participantId}/remove`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,

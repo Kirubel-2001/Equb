@@ -174,6 +174,25 @@ export const updateParticipantStatus = async (req, res) => {
     participant.status = status;
     await participant.save();
 
+    // Update equb status based on participant count
+    if (status === "Accepted") {
+      // Count how many accepted participants there are now
+      const updatedAcceptedCount = await Participant.countDocuments({
+        equb: participant.equb,
+        status: "Accepted",
+      });
+      
+      // If equb is now full, set status to Active; otherwise set to Pending
+      if (updatedAcceptedCount >= equb.numberOfParticipants) {
+        equb.status = "Active";
+      } else {
+        equb.status = "Pending";
+      }
+      
+      // Save the updated equb status
+      await equb.save();
+    }
+
     res.json({ 
       message: `Participant ${status.toLowerCase()} successfully`,
       participant: {
@@ -245,6 +264,13 @@ export const leaveEqub = async (req, res) => {
     }
 
     await Participant.findByIdAndDelete(participant._id);
+    
+    // If participant was accepted, update equb status to "Pending"
+    if (participant.status === "Accepted" && equb.status !== "Completed") {
+      equb.status = "Pending";
+      await equb.save();
+    }
+    
     res.json({ message: "Successfully left the Equb" });
   } catch (err) {
     console.error(err);
@@ -278,6 +304,57 @@ export const getEqubParticipantCount = async (req, res) => {
       currentParticipants: acceptedCount,
       remainingSpots: remainingSpots,
       isFull: remainingSpots <= 0
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Remove a participant from an Equb (creator only)
+export const removeParticipant = async (req, res) => {
+  try {
+    const { participantId } = req.params;
+    const creatorId = req.user.userId;
+
+    // Find the participant
+    const participant = await Participant.findById(participantId);
+    if (!participant) {
+      return res.status(404).json({ message: "Participant not found" });
+    }
+
+    // Get the equb to verify creator
+    const equb = await Equb.findById(participant.equb);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+
+    // Verify the requester is the equb creator
+    if (equb.creator.toString() !== creatorId) {
+      return res.status(403).json({ message: "Unauthorized. Only the equb creator can remove participants" });
+    }
+
+    // Check if equb is already in active state and participant has accepted status
+    if (equb.status === "Active" && participant.status === "Accepted") {
+      return res.status(400).json({ 
+        message: "Cannot remove a participant from an active Equb. Please contact support for assistance." 
+      });
+    }
+
+    // Remove the participant
+    await Participant.findByIdAndDelete(participantId);
+    
+    // If participant was accepted, update equb status to "Pending"
+    if (participant.status === "Accepted" && equb.status !== "Completed") {
+      equb.status = "Pending";
+      await equb.save();
+    }
+
+    // Return success message
+    res.json({ 
+      message: "Participant removed successfully",
+      participantId: participantId,
+      equbId: equb._id
     });
   } catch (err) {
     console.error(err);

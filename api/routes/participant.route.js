@@ -6,7 +6,8 @@ import {
   getMyJoinedEqubs,
   updateParticipantStatus,
   leaveEqub,
-  getEqubParticipantCount
+  getEqubParticipantCount,
+  removeParticipant
 } from "../controllers/participant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -35,4 +36,6 @@ router.delete("/leave/:equbId", leaveEqub);
 // Get participant count for an Equb
 router.get("/count/:equbId", getEqubParticipantCount);
 
+// Remove a participant from an Equb (creator only)
+router.delete("/:participantId/remove", removeParticipant);
 export default router;
