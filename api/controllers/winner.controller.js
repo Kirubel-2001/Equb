@@ -11,16 +11,18 @@ export const getAllWinners = async (req, res) => {
     const winners = await Winner.find()
       .populate("equb", "name")
       .populate("user", "firstName lastName");
-    
+
     // Add isRead field to each winner
-    const winnersWithReadStatus = winners.map(winner => {
-      const isRead = winner.readBy?.some(reader => reader.user.toString() === userId) || false;
+    const winnersWithReadStatus = winners.map((winner) => {
+      const isRead =
+        winner.readBy?.some((reader) => reader.user.toString() === userId) ||
+        false;
       return {
         ...winner.toObject(),
-        isRead
+        isRead,
       };
     });
-    
+
     res.status(200).json(winnersWithReadStatus);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -38,11 +40,13 @@ export const getWinnersByEqub = async (req, res) => {
       .sort({ dateWon: -1 });
 
     // Add isRead field to each winner
-    const winnersWithReadStatus = winners.map(winner => {
-      const isRead = winner.readBy?.some(reader => reader.user.toString() === userId) || false;
+    const winnersWithReadStatus = winners.map((winner) => {
+      const isRead =
+        winner.readBy?.some((reader) => reader.user.toString() === userId) ||
+        false;
       return {
         ...winner.toObject(),
-        isRead
+        isRead,
       };
     });
 
@@ -98,39 +102,58 @@ export const selectManualWinner = async (req, res) => {
     });
 
     if (!cycle) {
-      return res.status(404).json({ message: "No active cycle found for this Equb" });
+      return res
+        .status(404)
+        .json({ message: "No active cycle found for this Equb" });
     }
 
     // Verify the participant exists and is part of this Equb
     const participant = await Participant.findOne({
       _id: participantId,
       equb: equbId,
-      status: "Accepted"
+      status: "Accepted",
     });
 
     if (!participant) {
-      return res.status(404).json({ message: "Participant not found or not eligible" });
+      return res
+        .status(404)
+        .json({ message: "Participant not found or not eligible" });
     }
 
     // Check if participant has already won in a previous cycle
     const alreadyWon = await Winner.findOne({
       equb: equbId,
-      participant: participantId
+      participant: participantId,
     });
 
     if (alreadyWon) {
-      return res.status(400).json({ message: "This participant has already won in a previous cycle" });
+      return res
+        .status(400)
+        .json({
+          message: "This participant has already won in a previous cycle",
+        });
     }
 
     // Check if a winner has already been selected for this cycle
     const existingWinner = await Winner.findOne({
       equb: equbId,
-      cycleNumber: cycle.currentCycleNumber
+      cycleNumber: cycle.currentCycleNumber,
     });
 
     if (existingWinner) {
-      return res.status(400).json({ message: "A winner has already been selected for this cycle" });
+      return res
+        .status(400)
+        .json({ message: "A winner has already been selected for this cycle" });
     }
+
+    // Get the current number of participants
+    const currentParticipantsCount = await Participant.countDocuments({
+      equb: equbId,
+      status: "Accepted"
+    });
+
+    // Calculate the amount won (pool amount)
+    const amountWon = equb.amountPerPerson * currentParticipantsCount;
 
     // Save the winner
     const winner = new Winner({
@@ -139,7 +162,8 @@ export const selectManualWinner = async (req, res) => {
       user: participant.user,
       cycleNumber: cycle.currentCycleNumber,
       winDate: new Date(),
-      readBy: [] // Initialize empty readBy array
+      readBy: [], // Initialize empty readBy array
+      amountWon: amountWon  // Add calculated amount won
     });
 
     await winner.save();
@@ -157,7 +181,7 @@ export const selectManualWinner = async (req, res) => {
 
     // Check if this was the final cycle
     const previousWinnersCount = await Winner.countDocuments({ equb: equbId });
-    
+
     // If not all participants have won, start a new cycle
     if (previousWinnersCount < equb.numberOfParticipants) {
       // Create a new cycle if automatic or if manual but switched to automatic
@@ -175,16 +199,19 @@ export const selectManualWinner = async (req, res) => {
 
         await newCycle.save();
 
-        return res.status(200).json({ 
-          message: `Winner selected manually and new cycle started${switchToAutomatic ? ' (switched to automatic mode)' : ''}`, 
+        return res.status(200).json({
+          message: `Winner selected manually and new cycle started${
+            switchToAutomatic ? " (switched to automatic mode)" : ""
+          }`,
           winner: participant,
-          newCycle
+          newCycle,
         });
       } else {
         // For pure manual Equbs, just complete the current cycle
-        return res.status(200).json({ 
-          message: "Winner selected manually. Cycle completed. You can now start a new cycle.", 
-          winner: participant
+        return res.status(200).json({
+          message:
+            "Winner selected manually. Cycle completed. You can now start a new cycle.",
+          winner: participant,
         });
       }
     } else {
@@ -192,9 +219,9 @@ export const selectManualWinner = async (req, res) => {
       equb.status = "Completed";
       await equb.save();
 
-      return res.status(200).json({ 
-        message: "Final winner selected manually. Equb is now completed", 
-        winner: participant 
+      return res.status(200).json({
+        message: "Final winner selected manually. Equb is now completed",
+        winner: participant,
       });
     }
   } catch (error) {
@@ -206,7 +233,7 @@ export const selectManualWinner = async (req, res) => {
 export const selectAutomaticWinner = async (req, res) => {
   try {
     const { equbId } = req.params;
-    
+
     // Verify equb exists
     const equb = await Equb.findById(equbId);
     if (!equb) {
@@ -225,31 +252,46 @@ export const selectAutomaticWinner = async (req, res) => {
     });
 
     if (!cycle) {
-      return res.status(404).json({ message: "No active cycle found for this Equb" });
+      return res
+        .status(404)
+        .json({ message: "No active cycle found for this Equb" });
     }
 
     // Check if a winner has already been selected for this cycle
     const existingWinner = await Winner.findOne({
       equb: equbId,
-      cycleNumber: cycle.currentCycleNumber
+      cycleNumber: cycle.currentCycleNumber,
     });
 
     if (existingWinner) {
-      return res.status(400).json({ message: "A winner has already been selected for this cycle" });
+      return res
+        .status(400)
+        .json({ message: "A winner has already been selected for this cycle" });
     }
 
     // Find all participants who haven't won yet
-    const previousWinners = await Winner.find({ equb: equbId }).distinct('participant');
-    
+    const previousWinners = await Winner.find({ equb: equbId }).distinct(
+      "participant"
+    );
+
     const eligibleParticipants = await Participant.find({
       equb: equbId,
       status: "Accepted",
-      _id: { $nin: previousWinners }
+      _id: { $nin: previousWinners },
     });
 
     if (eligibleParticipants.length === 0) {
       return res.status(400).json({ message: "No eligible participants left" });
     }
+
+    // Get the current number of participants
+    const currentParticipantsCount = await Participant.countDocuments({
+      equb: equbId,
+      status: "Accepted"
+    });
+
+    // Calculate the amount won (pool amount)
+    const amountWon = equb.amountPerPerson * currentParticipantsCount;
 
     // Randomly select a winner
     const winnerIndex = Math.floor(Math.random() * eligibleParticipants.length);
@@ -262,7 +304,8 @@ export const selectAutomaticWinner = async (req, res) => {
       user: selectedParticipant.user,
       cycleNumber: cycle.currentCycleNumber,
       winDate: new Date(),
-      readBy: [] // Initialize empty readBy array
+      readBy: [], // Initialize empty readBy array
+      amountWon: amountWon  // Add calculated amount won
     });
 
     await winner.save();
@@ -288,19 +331,19 @@ export const selectAutomaticWinner = async (req, res) => {
 
       await newCycle.save();
 
-      return res.status(200).json({ 
-        message: "Winner selected and new cycle started automatically", 
+      return res.status(200).json({
+        message: "Winner selected and new cycle started automatically",
         winner: selectedParticipant,
-        newCycle
+        newCycle,
       });
     } else {
       // All participants have won, complete the Equb
       equb.status = "Completed";
       await equb.save();
 
-      return res.status(200).json({ 
-        message: "Final winner selected. Equb is now completed", 
-        winner: selectedParticipant 
+      return res.status(200).json({
+        message: "Final winner selected. Equb is now completed",
+        winner: selectedParticipant,
       });
     }
   } catch (error) {
@@ -315,11 +358,13 @@ export const processAutomaticWinners = async (req, res) => {
     const now = new Date();
     const activeCycles = await CycleManagement.find({
       status: "Active",
-      nextDrawDate: { $lte: now }
+      nextDrawDate: { $lte: now },
     }).populate("equb");
 
     if (activeCycles.length === 0) {
-      return res.status(200).json({ message: "No cycles ready for automatic winner selection" });
+      return res
+        .status(200)
+        .json({ message: "No cycles ready for automatic winner selection" });
     }
 
     const results = [];
@@ -335,38 +380,51 @@ export const processAutomaticWinners = async (req, res) => {
         // Check if a winner has already been selected for this cycle
         const existingWinner = await Winner.findOne({
           equb: cycle.equb._id,
-          cycleNumber: cycle.currentCycleNumber
+          cycleNumber: cycle.currentCycleNumber,
         });
 
         if (existingWinner) {
-          results.push({ 
-            equbId: cycle.equb._id, 
-            status: "skipped", 
-            message: "Winner already selected for this cycle" 
+          results.push({
+            equbId: cycle.equb._id,
+            status: "skipped",
+            message: "Winner already selected for this cycle",
           });
           continue;
         }
 
         // Find all participants who haven't won yet
-        const previousWinners = await Winner.find({ equb: cycle.equb._id }).distinct('participant');
-        
+        const previousWinners = await Winner.find({
+          equb: cycle.equb._id,
+        }).distinct("participant");
+
         const eligibleParticipants = await Participant.find({
           equb: cycle.equb._id,
           status: "Accepted",
-          _id: { $nin: previousWinners }
+          _id: { $nin: previousWinners },
         });
 
         if (eligibleParticipants.length === 0) {
-          results.push({ 
-            equbId: cycle.equb._id, 
-            status: "error", 
-            message: "No eligible participants left" 
+          results.push({
+            equbId: cycle.equb._id,
+            status: "error",
+            message: "No eligible participants left",
           });
           continue;
         }
 
+        // Get the current number of participants
+        const currentParticipantsCount = await Participant.countDocuments({
+          equb: cycle.equb._id,
+          status: "Accepted"
+        });
+
+        // Calculate the amount won (pool amount)
+        const amountWon = cycle.equb.amountPerPerson * currentParticipantsCount;
+
         // Randomly select a winner
-        const winnerIndex = Math.floor(Math.random() * eligibleParticipants.length);
+        const winnerIndex = Math.floor(
+          Math.random() * eligibleParticipants.length
+        );
         const selectedParticipant = eligibleParticipants[winnerIndex];
 
         // Save the winner
@@ -376,7 +434,8 @@ export const processAutomaticWinners = async (req, res) => {
           user: selectedParticipant.user,
           cycleNumber: cycle.currentCycleNumber,
           winDate: now,
-          readBy: [] // Initialize empty readBy array
+          readBy: [], // Initialize empty readBy array
+          amountWon: amountWon  // Add calculated amount won
         });
 
         await winner.save();
@@ -402,12 +461,12 @@ export const processAutomaticWinners = async (req, res) => {
 
           await newCycle.save();
 
-          results.push({ 
-            equbId: cycle.equb._id, 
-            status: "success", 
+          results.push({
+            equbId: cycle.equb._id,
+            status: "success",
             message: "Winner selected and new cycle started automatically",
             winner: selectedParticipant._id,
-            newCycleNumber: nextCycleNumber
+            newCycleNumber: nextCycleNumber,
           });
         } else {
           // Complete the Equb
@@ -415,25 +474,25 @@ export const processAutomaticWinners = async (req, res) => {
           equb.status = "Completed";
           await equb.save();
 
-          results.push({ 
-            equbId: cycle.equb._id, 
-            status: "success", 
+          results.push({
+            equbId: cycle.equb._id,
+            status: "success",
             message: "Final winner selected. Equb is now completed",
-            winner: selectedParticipant._id
+            winner: selectedParticipant._id,
           });
         }
       } catch (error) {
-        results.push({ 
-          equbId: cycle.equb._id, 
-          status: "error", 
-          message: error.message 
+        results.push({
+          equbId: cycle.equb._id,
+          status: "error",
+          message: error.message,
         });
       }
     }
 
-    res.status(200).json({ 
-      message: "Automatic winner selection process completed", 
-      results 
+    res.status(200).json({
+      message: "Automatic winner selection process completed",
+      results,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -452,22 +511,22 @@ export const markWinnerAsRead = async (req, res) => {
     }
 
     // Check if user already read this winner announcement
-    const alreadyRead = winner.readBy?.some(reader => 
-      reader.user.toString() === userId
-    ) || false;
+    const alreadyRead =
+      winner.readBy?.some((reader) => reader.user.toString() === userId) ||
+      false;
 
     if (!alreadyRead) {
       // Initialize readBy if it doesn't exist
       if (!winner.readBy) {
         winner.readBy = [];
       }
-      
+
       // Add user to readBy array
       winner.readBy.push({
         user: userId,
-        readAt: new Date()
+        readAt: new Date(),
       });
-      
+
       await winner.save();
     }
 
@@ -493,20 +552,20 @@ export const markAllWinnersAsRead = async (req, res) => {
     const winners = await Winner.find({ equb: equbId });
 
     // For each winner, add the user to readBy if not already there
-    const updateOperations = winners.map(winner => {
+    const updateOperations = winners.map((winner) => {
       // Initialize readBy if it doesn't exist
       if (!winner.readBy) {
         winner.readBy = [];
       }
-      
-      const alreadyRead = winner.readBy.some(reader => 
-        reader.user.toString() === userId
+
+      const alreadyRead = winner.readBy.some(
+        (reader) => reader.user.toString() === userId
       );
-      
+
       if (!alreadyRead) {
         winner.readBy.push({
           user: userId,
-          readAt: new Date()
+          readAt: new Date(),
         });
         return winner.save();
       }
@@ -535,17 +594,19 @@ export const getWinnerReadStatus = async (req, res) => {
 
     // Get all winners for this equb
     const winners = await Winner.find({ equb: equbId });
-    
+
     // Count total and unread winners
     const total = winners.length;
-    const unread = winners.filter(winner => 
-      !winner.readBy || !winner.readBy.some(reader => reader.user.toString() === userId)
+    const unread = winners.filter(
+      (winner) =>
+        !winner.readBy ||
+        !winner.readBy.some((reader) => reader.user.toString() === userId)
     ).length;
-    
+
     res.status(200).json({
       total,
       unread,
-      read: total - unread
+      read: total - unread,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -1,6 +1,7 @@
 import Participant from "../models/participant.model.js";
 import Equb from "../models/equb.model.js";
 import User from "../models/user.model.js";
+import Winner from "../models/winner.model.js";
 
 // Request to join an Equb
 export const joinEqub = async (req, res) => {
@@ -307,6 +308,49 @@ export const getEqubParticipantCount = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get eligible winners for an Equb (participants who haven't won yet)
+export const getEligibleWinners = async (req, res) => {
+  try {
+    const { equbId } = req.params;
+    const userId = req.user.userId;
+
+    // Verify the Equb exists
+    const equb = await Equb.findById(equbId);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+
+    // Verify user is the creator of the Equb or an admin
+    if (equb.creator.toString() !== userId && req.user.role !== "Admin") {
+      return res.status(403).json({ message: "Unauthorized: Only the Equb creator can view eligible winners" });
+    }
+
+    // Find all accepted participants for this Equb
+    const allParticipants = await Participant.find({
+      equb: equbId,
+      status: "Accepted"
+    }).populate("user", "firstName lastName email profilePicture");
+
+    // Find all users who have already won in this Equb
+    const previousWinners = await Winner.find({
+      equb: equbId
+    }).select("user");
+
+    // Extract just the user IDs from winners
+    const previousWinnerIds = previousWinners.map(winner => winner.user.toString());
+
+    // Filter out participants who have already won
+    const eligibleParticipants = allParticipants.filter(participant => 
+      !previousWinnerIds.includes(participant.user._id.toString())
+    );
+
+    res.json(eligibleParticipants);
+  } catch (err) {
+    console.error("Error fetching eligible winners:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
