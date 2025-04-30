@@ -600,14 +600,6 @@ export const CreatedEqubs = ({
     }
   };
 
-  // Show winner selection modal (automatic)
-  const handleShowWinnerModal = (equb) => {
-    setEqubToDrawWinner(equb);
-    setWinnerSelectionError("");
-    setWinnerSelectionSuccess(false);
-    setShowWinnerModal(true);
-  };
-
 // Show manual winner selection modal
 const handleShowManualWinnerModal = async (equb) => {
   // Check if there's an active cycle for this equb
