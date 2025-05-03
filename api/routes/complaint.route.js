@@ -21,7 +21,7 @@ router.get('/user', verifyToken, getUserComplaints);
 router.get('/equb/:equbId', verifyToken, getEqubComplaints);
 
 // Get all complaints (admin only)
-router.get('/all', verifyToken, getAllComplaints);
+router.get('/all',  getAllComplaints);
 
 // Resolve a complaint
 router.patch('/:complaintId/resolve', verifyToken, resolveComplaint);

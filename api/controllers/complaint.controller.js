@@ -81,10 +81,7 @@ export const getEqubComplaints = async (req, res) => {
 // Get all complaints (for admin)
 export const getAllComplaints = async (req, res) => {
   try {
-    // Check if user is admin (assuming role field in user model)
-    if (req.user.role !== 'Admin') {
-      return res.status(403).json({ message: 'Unauthorized - Admin access required' });
-    }
+   
     
     const complaints = await Complaint.find()
       .populate('user', 'firstName lastName')
