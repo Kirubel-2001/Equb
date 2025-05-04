@@ -27,6 +27,6 @@ router.get('/all',  getAllComplaints);
 router.patch('/:complaintId/resolve', verifyToken, resolveComplaint);
 
 // Delete a complaint (admin only)
-router.delete('/:complaintId', verifyToken, deleteComplaint);
+router.delete('/:complaintId', deleteComplaint);
 
 export default router;

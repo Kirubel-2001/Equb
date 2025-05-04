@@ -27,7 +27,7 @@ import {
   RefreshCw,
   UserCheck,
   ChevronDown,
-  Info
+  Info,
 } from "lucide-react";
 import { CreateEqub } from "../CreateEqub";
 
@@ -35,7 +35,7 @@ export const CreatedEqubs = ({
   equbs,
   showAdminControls = false,
   onEqubDeleted,
-  onEqubUpdated
+  onEqubUpdated,
 }) => {
   const [joinStatus, setJoinStatus] = useState({});
   const [loadingMap, setLoadingMap] = useState({});
@@ -58,8 +58,10 @@ export const CreatedEqubs = ({
   const [equbAnnouncements, setEqubAnnouncements] = useState({});
   const [announcementsLoading, setAnnouncementsLoading] = useState({});
   const [announcementToEdit, setAnnouncementToEdit] = useState(null);
-  const [showEditAnnouncementModal, setShowEditAnnouncementModal] = useState(false);
-  const [showDeleteAnnouncementModal, setShowDeleteAnnouncementModal] = useState(false);
+  const [showEditAnnouncementModal, setShowEditAnnouncementModal] =
+    useState(false);
+  const [showDeleteAnnouncementModal, setShowDeleteAnnouncementModal] =
+    useState(false);
   const [announcementToDelete, setAnnouncementToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState("details");
   // Participant count state
@@ -86,7 +88,7 @@ export const CreatedEqubs = ({
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [switchToAutomatic, setSwitchToAutomatic] = useState(false);
   const [manualWinnerError, setManualWinnerError] = useState("");
-  
+  const [showPopup, setShowPopup] = useState(false);
   const equbsPerPage = 9;
 
   // Fetch participant counts on component mount
@@ -94,16 +96,16 @@ export const CreatedEqubs = ({
     const fetchParticipantCounts = async () => {
       try {
         const countsObj = {};
-        
+
         for (const equb of equbs) {
           try {
             const countResponse = await fetch(
               `/api/participant/count/${equb._id}`,
               {
                 headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                  'Content-Type': 'application/json'
-                }
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  "Content-Type": "application/json",
+                },
               }
             );
             if (countResponse.ok) {
@@ -112,14 +114,14 @@ export const CreatedEqubs = ({
                 currentParticipants: countData.currentParticipants,
                 totalParticipants: countData.totalParticipants,
                 remainingSpots: countData.remainingSpots,
-                isFull: countData.isFull
+                isFull: countData.isFull,
               };
             }
           } catch (error) {
             console.error(`Error fetching data for equb ${equb._id}:`, error);
           }
         }
-        
+
         setParticipantCounts(countsObj);
       } catch (error) {
         console.error("Error fetching participant counts:", error);
@@ -136,7 +138,7 @@ export const CreatedEqubs = ({
       const timer = setTimeout(() => {
         setAnnouncementSuccess(false);
       }, 3000);
-      
+
       return () => {
         clearTimeout(timer);
       };
@@ -149,7 +151,7 @@ export const CreatedEqubs = ({
         setShowWinnerModal(false);
         setEqubToDrawWinner(null);
       }, 3000);
-      
+
       return () => {
         clearTimeout(timer);
       };
@@ -157,12 +159,12 @@ export const CreatedEqubs = ({
 
     // Clear start cycle success messages
     const startCycleTimers = [];
-    Object.keys(startCycleSuccess).forEach(equbId => {
+    Object.keys(startCycleSuccess).forEach((equbId) => {
       if (startCycleSuccess[equbId]) {
         const timer = setTimeout(() => {
-          setStartCycleSuccess(prev => ({
+          setStartCycleSuccess((prev) => ({
             ...prev,
-            [equbId]: false
+            [equbId]: false,
           }));
         }, 3000);
         startCycleTimers.push(timer);
@@ -171,12 +173,12 @@ export const CreatedEqubs = ({
 
     // Clear start cycle error messages
     const startCycleErrorTimers = [];
-    Object.keys(startCycleError).forEach(equbId => {
+    Object.keys(startCycleError).forEach((equbId) => {
       if (startCycleError[equbId]) {
         const timer = setTimeout(() => {
-          setStartCycleError(prev => ({
+          setStartCycleError((prev) => ({
             ...prev,
-            [equbId]: ""
+            [equbId]: "",
           }));
         }, 3000);
         startCycleErrorTimers.push(timer);
@@ -184,10 +186,15 @@ export const CreatedEqubs = ({
     });
 
     return () => {
-      startCycleTimers.forEach(timer => clearTimeout(timer));
-      startCycleErrorTimers.forEach(timer => clearTimeout(timer));
+      startCycleTimers.forEach((timer) => clearTimeout(timer));
+      startCycleErrorTimers.forEach((timer) => clearTimeout(timer));
     };
-  }, [announcementSuccess, winnerSelectionSuccess, startCycleSuccess, startCycleError]);
+  }, [
+    announcementSuccess,
+    winnerSelectionSuccess,
+    startCycleSuccess,
+    startCycleError,
+  ]);
 
   // Fetch announcements when an equb is selected for details
   useEffect(() => {
@@ -206,22 +213,22 @@ export const CreatedEqubs = ({
 
   const fetchAnnouncementsForEqub = async (equbId) => {
     if (equbAnnouncements[equbId]) return; // Already fetched
-    
-    setAnnouncementsLoading(prev => ({ ...prev, [equbId]: true }));
-    
+
+    setAnnouncementsLoading((prev) => ({ ...prev, [equbId]: true }));
+
     try {
       const response = await fetch(`/api/announcement/equb/${equbId}`, {
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setEqubAnnouncements(prev => ({
+        setEqubAnnouncements((prev) => ({
           ...prev,
-          [equbId]: data
+          [equbId]: data,
         }));
       } else {
         console.error(`Error fetching announcements for equb ${equbId}`);
@@ -229,22 +236,22 @@ export const CreatedEqubs = ({
     } catch (error) {
       console.error(`Error fetching announcements:`, error);
     } finally {
-      setAnnouncementsLoading(prev => ({ ...prev, [equbId]: false }));
+      setAnnouncementsLoading((prev) => ({ ...prev, [equbId]: false }));
     }
   };
 
   // Fetch cycle information for an equb
   const fetchCycleForEqub = async (equbId) => {
     setCycleLoading(true);
-    
+
     try {
       const response = await fetch(`/api/cycle/equb/${equbId}`, {
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setCurrentCycle(data);
@@ -263,15 +270,15 @@ export const CreatedEqubs = ({
   // Fetch winners for an equb
   const fetchWinnersForEqub = async (equbId) => {
     setWinnersLoading(true);
-    
+
     try {
       const response = await fetch(`/api/winner/equb/${equbId}`, {
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setWinners(data);
@@ -290,20 +297,25 @@ export const CreatedEqubs = ({
   // Fetch eligible participants for manual winner selection
   const fetchEligibleParticipants = async (equbId) => {
     setParticipantsLoading(true);
-    
+
     try {
-      const response = await fetch(`/api/participant/eligible-winners/${equbId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-      });
-      
+      const response = await fetch(
+        `/api/participant/eligible-winners/${equbId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
       if (response.ok) {
         const data = await response.json();
         setEligibleParticipants(data);
       } else {
-        console.error(`Error fetching eligible participants for equb ${equbId}`);
+        console.error(
+          `Error fetching eligible participants for equb ${equbId}`
+        );
         setEligibleParticipants([]);
       }
     } catch (error) {
@@ -345,7 +357,7 @@ export const CreatedEqubs = ({
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
@@ -353,7 +365,7 @@ export const CreatedEqubs = ({
         // Close the delete modal immediately
         setShowDeleteModal(false);
         setEqubToDelete(null);
-        
+
         // Notify parent component about update
         if (onEqubDeleted) {
           onEqubDeleted(equbId);
@@ -361,7 +373,7 @@ export const CreatedEqubs = ({
       } else {
         const errorData = await response.json();
         console.error("Error deleting Equb:", errorData);
-        
+
         // Close modal but show error in the join status area of the affected equb
         setShowDeleteModal(false);
         setEqubToDelete(null);
@@ -410,27 +422,30 @@ export const CreatedEqubs = ({
     setAnnouncementError("");
 
     try {
-      const response = await fetch(`/api/announcement/equb/${equbToAnnounce._id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ message: announcementMessage }),
-      });
+      const response = await fetch(
+        `/api/announcement/equb/${equbToAnnounce._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ message: announcementMessage }),
+        }
+      );
 
       if (response.ok) {
         setAnnouncementSuccess(true);
         // Clear the form after successful submission
         setAnnouncementMessage("");
-        
+
         // Clear cached announcements to force a refresh
-        setEqubAnnouncements(prev => {
+        setEqubAnnouncements((prev) => {
           const newState = { ...prev };
           delete newState[equbToAnnounce._id];
           return newState;
         });
-        
+
         // Close the modal after a short delay
         setTimeout(() => {
           setShowAnnouncementModal(false);
@@ -438,11 +453,15 @@ export const CreatedEqubs = ({
         }, 1500);
       } else {
         const errorData = await response.json();
-        setAnnouncementError(errorData.message || "Failed to send announcement. Please try again.");
+        setAnnouncementError(
+          errorData.message || "Failed to send announcement. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error sending announcement:", error);
-      setAnnouncementError("Failed to send announcement. Please check your connection.");
+      setAnnouncementError(
+        "Failed to send announcement. Please check your connection."
+      );
     } finally {
       setAnnouncementLoading(false);
     }
@@ -468,31 +487,36 @@ export const CreatedEqubs = ({
     setAnnouncementError("");
 
     try {
-      const response = await fetch(`/api/announcement/${announcementToEdit._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ message: announcementMessage }),
-      });
+      const response = await fetch(
+        `/api/announcement/${announcementToEdit._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ message: announcementMessage }),
+        }
+      );
 
       if (response.ok) {
         setAnnouncementSuccess(true);
-        
+
         // Update the announcements list
-        setEqubAnnouncements(prev => {
+        setEqubAnnouncements((prev) => {
           const equbId = announcementToEdit.equb;
-          const updatedAnnouncements = prev[equbId].map(ann => 
-            ann._id === announcementToEdit._id ? { ...ann, message: announcementMessage } : ann
+          const updatedAnnouncements = prev[equbId].map((ann) =>
+            ann._id === announcementToEdit._id
+              ? { ...ann, message: announcementMessage }
+              : ann
           );
-          
+
           return {
             ...prev,
-            [equbId]: updatedAnnouncements
+            [equbId]: updatedAnnouncements,
           };
         });
-        
+
         // Close the modal after a short delay
         setTimeout(() => {
           setShowEditAnnouncementModal(false);
@@ -501,11 +525,16 @@ export const CreatedEqubs = ({
         }, 1500);
       } else {
         const errorData = await response.json();
-        setAnnouncementError(errorData.message || "Failed to update announcement. Please try again.");
+        setAnnouncementError(
+          errorData.message ||
+            "Failed to update announcement. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error updating announcement:", error);
-      setAnnouncementError("Failed to update announcement. Please check your connection.");
+      setAnnouncementError(
+        "Failed to update announcement. Please check your connection."
+      );
     } finally {
       setAnnouncementLoading(false);
     }
@@ -524,24 +553,29 @@ export const CreatedEqubs = ({
     setAnnouncementLoading(true);
 
     try {
-      const response = await fetch(`/api/announcement/${announcementToDelete._id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-      });
+      const response = await fetch(
+        `/api/announcement/${announcementToDelete._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (response.ok) {
         // Update announcements list
-        setEqubAnnouncements(prev => {
+        setEqubAnnouncements((prev) => {
           const equbId = announcementToDelete.equb;
           return {
             ...prev,
-            [equbId]: prev[equbId].filter(ann => ann._id !== announcementToDelete._id)
+            [equbId]: prev[equbId].filter(
+              (ann) => ann._id !== announcementToDelete._id
+            ),
           };
         });
-        
+
         // Close the modal
         setShowDeleteAnnouncementModal(false);
         setAnnouncementToDelete(null);
@@ -558,121 +592,126 @@ export const CreatedEqubs = ({
 
   // Handle start cycle button
   const handleStartCycle = async (equbId) => {
-    setStartCycleLoading(prev => ({ ...prev, [equbId]: true }));
-    setStartCycleError(prev => ({ ...prev, [equbId]: "" }));
-    
+    setStartCycleLoading((prev) => ({ ...prev, [equbId]: true }));
+    setStartCycleError((prev) => ({ ...prev, [equbId]: "" }));
+
     try {
       const response = await fetch(`/api/cycle/equb/${equbId}/start`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       if (response.ok) {
-        setStartCycleSuccess(prev => ({ ...prev, [equbId]: true }));
-        
+        setStartCycleSuccess((prev) => ({ ...prev, [equbId]: true }));
+
         // Refresh cycle data
         if (selectedEqub && selectedEqub._id === equbId) {
           fetchCycleForEqub(equbId);
         }
-        
+
         // Notify parent component about update
         if (onEqubUpdated) {
           onEqubUpdated();
         }
       } else {
         const errorData = await response.json();
-        setStartCycleError(prev => ({ 
-          ...prev, 
-          [equbId]: errorData.message || "Failed to start cycle. Please try again." 
+        setStartCycleError((prev) => ({
+          ...prev,
+          [equbId]:
+            errorData.message || "Failed to start cycle. Please try again.",
         }));
       }
     } catch (error) {
       console.error("Error starting cycle:", error);
-      setStartCycleError(prev => ({ 
-        ...prev, 
-        [equbId]: "Failed to start cycle. Please check your connection." 
+      setStartCycleError((prev) => ({
+        ...prev,
+        [equbId]: "Failed to start cycle. Please check your connection.",
       }));
     } finally {
-      setStartCycleLoading(prev => ({ ...prev, [equbId]: false }));
+      setStartCycleLoading((prev) => ({ ...prev, [equbId]: false }));
     }
   };
 
-// Show manual winner selection modal
-const handleShowManualWinnerModal = async (equb) => {
-  // Check if there's an active cycle for this equb
-  let cycleExists = false;
-  
-  try {
-    const cycleResponse = await fetch(`/api/cycle/equb/${equb._id}`, {
-      headers: {
-        "Content-Type": "application/json",
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-    });
-    
-    cycleExists = cycleResponse.ok && await cycleResponse.json();
-    
-    // If no cycle exists, start one first
-    if (!cycleExists) {
-      setStartCycleLoading(prev => ({ ...prev, [equb._id]: true }));
-      
-      const startCycleResponse = await fetch(`/api/cycle/equb/${equb._id}/start`, {
-        method: "POST",
+  // Show manual winner selection modal
+  const handleShowManualWinnerModal = async (equb) => {
+    // Check if there's an active cycle for this equb
+    let cycleExists = false;
+
+    try {
+      const cycleResponse = await fetch(`/api/cycle/equb/${equb._id}`, {
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
-      
-      if (!startCycleResponse.ok) {
-        const errorData = await startCycleResponse.json();
+
+      cycleExists = cycleResponse.ok && (await cycleResponse.json());
+
+      // If no cycle exists, start one first
+      if (!cycleExists) {
+        setStartCycleLoading((prev) => ({ ...prev, [equb._id]: true }));
+
+        const startCycleResponse = await fetch(
+          `/api/cycle/equb/${equb._id}/start`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!startCycleResponse.ok) {
+          const errorData = await startCycleResponse.json();
+          setJoinStatus({
+            ...joinStatus,
+            [equb._id]: {
+              status: "Error",
+              message:
+                errorData.message || "Failed to start cycle. Please try again.",
+            },
+          });
+          setStartCycleLoading((prev) => ({ ...prev, [equb._id]: false }));
+          return;
+        }
+
+        setStartCycleLoading((prev) => ({ ...prev, [equb._id]: false }));
+        setStartCycleSuccess((prev) => ({ ...prev, [equb._id]: true }));
+      } else if (cycleExists.hasSelectedWinner) {
+        // If cycle exists but a winner has already been selected
         setJoinStatus({
           ...joinStatus,
           [equb._id]: {
             status: "Error",
-            message: errorData.message || "Failed to start cycle. Please try again.",
+            message:
+              "A winner has already been selected for the current cycle. Please wait until the cycle ends.",
           },
         });
-        setStartCycleLoading(prev => ({ ...prev, [equb._id]: false }));
         return;
       }
-      
-      setStartCycleLoading(prev => ({ ...prev, [equb._id]: false }));
-      setStartCycleSuccess(prev => ({ ...prev, [equb._id]: true }));
-    } else if (cycleExists.hasSelectedWinner) {
-      // If cycle exists but a winner has already been selected
+
+      // Now proceed with winner selection
+      setEqubToDrawWinner(equb);
+      setManualWinnerError("");
+      setSwitchToAutomatic(false);
+      setSelectedParticipant("");
+      setShowManualWinnerModal(true);
+      fetchEligibleParticipants(equb._id);
+    } catch (error) {
+      console.error("Error checking cycle status:", error);
       setJoinStatus({
         ...joinStatus,
         [equb._id]: {
           status: "Error",
-          message: "A winner has already been selected for the current cycle. Please wait until the cycle ends.",
+          message: "Failed to process request. Please try again.",
         },
       });
-      return;
     }
-    
-    // Now proceed with winner selection
-    setEqubToDrawWinner(equb);
-    setManualWinnerError("");
-    setSwitchToAutomatic(false);
-    setSelectedParticipant("");
-    setShowManualWinnerModal(true);
-    fetchEligibleParticipants(equb._id);
-    
-  } catch (error) {
-    console.error("Error checking cycle status:", error);
-    setJoinStatus({
-      ...joinStatus,
-      [equb._id]: {
-        status: "Error",
-        message: "Failed to process request. Please try again.",
-      },
-    });
-  }
-};
+  };
 
   // Handle automatic winner selection
   const handleSelectWinner = async () => {
@@ -680,40 +719,48 @@ const handleShowManualWinnerModal = async (equb) => {
 
     setWinnerSelectionLoading(true);
     setWinnerSelectionError("");
-  // Calculate the amount won based on equb data
-  const amountWon = equbToDrawWinner.currentParticipants * equbToDrawWinner.amountPerPerson;
+    // Calculate the amount won based on equb data
+    const amountWon =
+      equbToDrawWinner.currentParticipants * equbToDrawWinner.amountPerPerson;
     try {
-      const response = await fetch(`/api/winner/equb/${equbToDrawWinner._id}/automatic`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          amountWon: amountWon  // Add the amount won field
-        }),
-      });
+      const response = await fetch(
+        `/api/winner/equb/${equbToDrawWinner._id}/automatic`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            amountWon: amountWon, // Add the amount won field
+          }),
+        }
+      );
 
       if (response.ok) {
         setWinnerSelectionSuccess(true);
-        
+
         // Refresh cycle and winners data
         if (selectedEqub && selectedEqub._id === equbToDrawWinner._id) {
           fetchCycleForEqub(equbToDrawWinner._id);
           fetchWinnersForEqub(equbToDrawWinner._id);
         }
-        
+
         // Notify parent component about update
         if (onEqubUpdated) {
           onEqubUpdated();
         }
       } else {
         const errorData = await response.json();
-        setWinnerSelectionError(errorData.message || "Failed to select winner. Please try again.");
+        setWinnerSelectionError(
+          errorData.message || "Failed to select winner. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error selecting winner:", error);
-      setWinnerSelectionError("Failed to select winner. Please check your connection.");
+      setWinnerSelectionError(
+        "Failed to select winner. Please check your connection."
+      );
     } finally {
       setWinnerSelectionLoading(false);
     }
@@ -728,51 +775,61 @@ const handleShowManualWinnerModal = async (equb) => {
 
     setWinnerSelectionLoading(true);
     setManualWinnerError("");
-  // Calculate the amount won based on equb data
-  // This is typically number of participants × amount per person
-  const amountWon = equbToDrawWinner.currentParticipants * equbToDrawWinner.amountPerPerson;
+    // Calculate the amount won based on equb data
+    // This is typically number of participants × amount per person
+    const amountWon =
+      equbToDrawWinner.currentParticipants * equbToDrawWinner.amountPerPerson;
     try {
-      const response = await fetch(`/api/winner/equb/${equbToDrawWinner._id}/manual`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ 
-          participantId: selectedParticipant,
-          switchToAutomatic: switchToAutomatic,
-          amountWon: amountWon 
-        }),
-      });
+      const response = await fetch(
+        `/api/winner/equb/${equbToDrawWinner._id}/manual`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            participantId: selectedParticipant,
+            switchToAutomatic: switchToAutomatic,
+            amountWon: amountWon,
+          }),
+        }
+      );
 
       if (response.ok) {
         setWinnerSelectionSuccess(true);
-        
+
         // Refresh cycle and winners data
         if (selectedEqub && selectedEqub._id === equbToDrawWinner._id) {
           fetchCycleForEqub(equbToDrawWinner._id);
           fetchWinnersForEqub(equbToDrawWinner._id);
         }
-        
-        // For Special equbs, automatically start the next cycle 
+
+        // For Special equbs, automatically start the next cycle
         // only if not switching to automatic mode (since that changes cycle handling)
         if (equbToDrawWinner.equbType === "Special" && !switchToAutomatic) {
           try {
             // Short delay to ensure winner selection is fully processed
             setTimeout(async () => {
-              const startCycleResponse = await fetch(`/api/cycle/equb/${equbToDrawWinner._id}/start`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+              const startCycleResponse = await fetch(
+                `/api/cycle/equb/${equbToDrawWinner._id}/start`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                  },
                 }
-              });
-              
+              );
+
               if (startCycleResponse.ok) {
                 console.log("New cycle automatically started for Special equb");
                 // Update success status for visual feedback
-                setStartCycleSuccess(prev => ({ ...prev, [equbToDrawWinner._id]: true }));
-                
+                setStartCycleSuccess((prev) => ({
+                  ...prev,
+                  [equbToDrawWinner._id]: true,
+                }));
+
                 // Refresh cycle data again after starting new cycle
                 if (selectedEqub && selectedEqub._id === equbToDrawWinner._id) {
                   fetchCycleForEqub(equbToDrawWinner._id);
@@ -782,15 +839,18 @@ const handleShowManualWinnerModal = async (equb) => {
               }
             }, 1000); // Small delay to ensure winner selection is fully processed
           } catch (cycleError) {
-            console.error("Error automatically starting new cycle:", cycleError);
+            console.error(
+              "Error automatically starting new cycle:",
+              cycleError
+            );
           }
         }
-        
+
         // Notify parent component about update
         if (onEqubUpdated) {
           onEqubUpdated();
         }
-        
+
         // Close the modal after a delay
         setTimeout(() => {
           setShowManualWinnerModal(false);
@@ -800,16 +860,20 @@ const handleShowManualWinnerModal = async (equb) => {
         }, 1500);
       } else {
         const errorData = await response.json();
-        setManualWinnerError(errorData.message || "Failed to select winner. Please try again.");
+        setManualWinnerError(
+          errorData.message || "Failed to select winner. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error selecting winner:", error);
-      setManualWinnerError("Failed to select winner. Please check your connection.");
+      setManualWinnerError(
+        "Failed to select winner. Please check your connection."
+      );
     } finally {
       setWinnerSelectionLoading(false);
     }
   };
-  
+
   // Mark winner as read
   const handleMarkWinnerAsRead = async (winnerId) => {
     try {
@@ -817,17 +881,15 @@ const handleShowManualWinnerModal = async (equb) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       if (response.ok) {
         // Update winners list with read status
-        setWinners(prev => 
-          prev.map(winner => 
-            winner._id === winnerId 
-              ? { ...winner, isRead: true } 
-              : winner
+        setWinners((prev) =>
+          prev.map((winner) =>
+            winner._id === winnerId ? { ...winner, isRead: true } : winner
           )
         );
       } else {
@@ -845,14 +907,14 @@ const handleShowManualWinnerModal = async (equb) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
 
       if (response.ok) {
         // Update all winners as read
-        setWinners(prev => 
-          prev.map(winner => ({ ...winner, isRead: true }))
+        setWinners((prev) =>
+          prev.map((winner) => ({ ...winner, isRead: true }))
         );
       } else {
         console.error("Error marking all winners as read");
@@ -875,32 +937,35 @@ const handleShowManualWinnerModal = async (equb) => {
   // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
-  
+
   // Helper function to get participant count display
   const getParticipantCountDisplay = (equbId) => {
     // Check if we have fetched participant count from API
     if (participantCounts[equbId]) {
-      const { currentParticipants, totalParticipants } = participantCounts[equbId];
+      const { currentParticipants, totalParticipants } =
+        participantCounts[equbId];
       return `${currentParticipants}/${totalParticipants} members`;
     }
-    
+
     // Fallback to equb object data
-    const equb = equbs.find(e => e._id === equbId);
-    return equb ? `${equb.currentParticipants}/${equb.numberOfParticipants} members` : "Loading...";
+    const equb = equbs.find((e) => e._id === equbId);
+    return equb
+      ? `${equb.currentParticipants}/${equb.numberOfParticipants} members`
+      : "Loading...";
   };
 
   // Function to render rating stars
   const renderRatingStars = (equb) => {
     if (!equb.averageRating && equb.averageRating !== 0) return null;
-    
+
     return (
       <div className="flex items-center mt-1">
         <div className="flex">
@@ -921,19 +986,19 @@ const handleShowManualWinnerModal = async (equb) => {
       </div>
     );
   };
-  
+
   // Function to check if a winner can be selected for an equb
   const canSelectWinner = (equb) => {
     // If there's no current cycle, winner selection is disabled
     if (!currentCycle) return true;
-    
+
     // If the equb ID doesn't match the current cycle's equb, we can't determine
     if (equb._id !== currentCycle.equb) return true;
-    
+
     // If a winner has already been selected for the current cycle, disable selection
     return !currentCycle.hasSelectedWinner;
   };
-  
+
   // Get current page equbs
   const indexOfLastEqub = currentPage * equbsPerPage;
   const indexOfFirstEqub = indexOfLastEqub - equbsPerPage;
@@ -945,7 +1010,7 @@ const handleShowManualWinnerModal = async (equb) => {
   const nextPage = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
-  
+
   return (
     <>
       {equbs.length > 0 ? (
@@ -971,9 +1036,7 @@ const handleShowManualWinnerModal = async (equb) => {
                         ? "Automatic Lottery"
                         : "Special Lottery"}
                     </span>
-                    <span
-                      className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                    >
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                       Created
                     </span>
                   </div>
@@ -1017,7 +1080,7 @@ const handleShowManualWinnerModal = async (equb) => {
                       {joinStatus[equb._id]?.message}
                     </div>
                   )}
-                  
+
                   {/* Start Cycle status messages */}
                   {startCycleSuccess[equb._id] && (
                     <div className="mt-2 text-sm text-green-600 flex items-center dark:text-green-400">
@@ -1025,7 +1088,7 @@ const handleShowManualWinnerModal = async (equb) => {
                       Cycle started successfully!
                     </div>
                   )}
-                  
+
                   {startCycleError[equb._id] && (
                     <div className="mt-2 text-sm text-red-600 flex items-center dark:text-red-400">
                       <AlertCircle className="h-4 w-4 mr-1" />
@@ -1060,22 +1123,30 @@ const handleShowManualWinnerModal = async (equb) => {
                             </>
                           )}
                         </button>
-                      ) : equb.status === "Active" && (
-                        <button
-                          className={`px-3 py-1.5 ${
-                            canSelectWinner(equb) 
-                              ? "bg-green-500 hover:bg-green-600" 
-                              : "bg-gray-400 cursor-not-allowed"
-                          } text-white rounded-lg transition flex items-center text-sm`}
-                          onClick={() => handleShowManualWinnerModal(equb)}
-                          disabled={winnerSelectionLoading || !canSelectWinner(equb)}
-                          title={!canSelectWinner(equb) ? "A winner has already been selected for this cycle" : ""}
-                        >
-                          <UserCheck className="h-3.5 w-3.5 mr-1" />
-                          Select Winner
-                        </button>
+                      ) : (
+                        equb.status === "Active" && (
+                          <button
+                            className={`px-3 py-1.5 ${
+                              canSelectWinner(equb)
+                                ? "bg-green-500 hover:bg-green-600"
+                                : "bg-gray-400 cursor-not-allowed"
+                            } text-white rounded-lg transition flex items-center text-sm`}
+                            onClick={() => handleShowManualWinnerModal(equb)}
+                            disabled={
+                              winnerSelectionLoading || !canSelectWinner(equb)
+                            }
+                            title={
+                              !canSelectWinner(equb)
+                                ? "A winner has already been selected for this cycle"
+                                : ""
+                            }
+                          >
+                            <UserCheck className="h-3.5 w-3.5 mr-1" />
+                            Select Winner
+                          </button>
+                        )
                       )}
-                      
+
                       <button
                         className="px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition flex items-center text-sm"
                         onClick={() => handleShowAnnouncementModal(equb)}
@@ -1144,7 +1215,9 @@ const handleShowManualWinnerModal = async (equb) => {
                     if (idx > 0 && number - arr[idx - 1] > 1) {
                       return (
                         <React.Fragment key={`ellipsis-${number}`}>
-                          <span className="px-3 py-1 text-gray-400 dark:text-gray-500">...</span>
+                          <span className="px-3 py-1 text-gray-400 dark:text-gray-500">
+                            ...
+                          </span>
                           <button
                             key={number}
                             onClick={() => paginate(number)}
@@ -1196,10 +1269,16 @@ const handleShowManualWinnerModal = async (equb) => {
           </p>
           <button
             className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-            onClick={() => window.location.href = "/create-equb"}
+            onClick={() => setShowPopup(true)}
           >
             Create a new Equb
           </button>
+          {showPopup && (
+            <CreateEqub
+              isOpen={showPopup}
+              onClose={() => setShowPopup(false)}
+            />
+          )}
         </div>
       )}
 
@@ -1208,7 +1287,9 @@ const handleShowManualWinnerModal = async (equb) => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold dark:text-white">Equb Details</h3>
+              <h3 className="text-xl font-bold dark:text-white">
+                Equb Details
+              </h3>
               <button
                 onClick={() => setShowDetailsModal(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -1219,7 +1300,9 @@ const handleShowManualWinnerModal = async (equb) => {
 
             <div className="mb-6">
               <div className="flex items-center flex-wrap gap-2 mb-3">
-                <h4 className="font-bold text-lg dark:text-white">{selectedEqub.name}</h4>
+                <h4 className="font-bold text-lg dark:text-white">
+                  {selectedEqub.name}
+                </h4>
 
                 <span
                   className={`text-xs px-2 py-1 rounded-full ${
@@ -1245,9 +1328,7 @@ const handleShowManualWinnerModal = async (equb) => {
                     ? "Automatic Lottery"
                     : "Special Lottery"}
                 </span>
-                <span
-                  className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                >
+                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                   Created
                 </span>
               </div>
@@ -1270,20 +1351,31 @@ const handleShowManualWinnerModal = async (equb) => {
                         </>
                       )}
                     </button>
-                  ) : selectedEqub.status === "Active" && (
-                    <button
-                      className={`px-3 py-1.5 ${
-                        canSelectWinner(selectedEqub) 
-                          ? "bg-green-500 hover:bg-green-600" 
-                          : "bg-gray-400 cursor-not-allowed"
-                      } text-white rounded-lg transition flex items-center text-sm`}
-                      onClick={() => handleShowManualWinnerModal(selectedEqub)}
-                      disabled={winnerSelectionLoading || !canSelectWinner(selectedEqub)}
-                      title={!canSelectWinner(selectedEqub) ? "A winner has already been selected for this cycle" : ""}
-                    >
-                      <UserCheck className="h-3.5 w-3.5 mr-1" />
-                      Select Winner
-                    </button>
+                  ) : (
+                    selectedEqub.status === "Active" && (
+                      <button
+                        className={`px-3 py-1.5 ${
+                          canSelectWinner(selectedEqub)
+                            ? "bg-green-500 hover:bg-green-600"
+                            : "bg-gray-400 cursor-not-allowed"
+                        } text-white rounded-lg transition flex items-center text-sm`}
+                        onClick={() =>
+                          handleShowManualWinnerModal(selectedEqub)
+                        }
+                        disabled={
+                          winnerSelectionLoading ||
+                          !canSelectWinner(selectedEqub)
+                        }
+                        title={
+                          !canSelectWinner(selectedEqub)
+                            ? "A winner has already been selected for this cycle"
+                            : ""
+                        }
+                      >
+                        <UserCheck className="h-3.5 w-3.5 mr-1" />
+                        Select Winner
+                      </button>
+                    )
                   )}
                 </div>
               )}
@@ -1343,14 +1435,18 @@ const handleShowManualWinnerModal = async (equb) => {
                     ))}
                   </div>
                   <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                    {selectedEqub.averageRating ? selectedEqub.averageRating.toFixed(1) : "0.0"} 
+                    {selectedEqub.averageRating
+                      ? selectedEqub.averageRating.toFixed(1)
+                      : "0.0"}
                     ({selectedEqub.ratingCount || 0} ratings)
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Location</h5>
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">
+                      Location
+                    </h5>
                     <div className="flex items-center text-gray-600 dark:text-gray-300">
                       <MapPin className="h-4 w-4 mr-2" />
                       <span>{selectedEqub.location}</span>
@@ -1358,7 +1454,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   </div>
 
                   <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Cycle</h5>
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">
+                      Cycle
+                    </h5>
                     <div className="flex items-center text-gray-600 dark:text-gray-300">
                       <Clock className="h-4 w-4 mr-2" />
                       <span>{selectedEqub.cycle}</span>
@@ -1366,7 +1464,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   </div>
 
                   <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">Members</h5>
+                    <h5 className="font-semibold text-gray-700 mb-2 dark:text-gray-200">
+                      Members
+                    </h5>
                     <div className="flex items-center text-gray-600 dark:text-gray-300">
                       <Users className="h-4 w-4 mr-2" />
                       <span>
@@ -1404,8 +1504,10 @@ const handleShowManualWinnerModal = async (equb) => {
               <div className="space-y-6">
                 {/* Current Cycle Information */}
                 <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
-                  <h5 className="font-semibold text-gray-700 mb-3 dark:text-gray-200">Current Cycle</h5>
-                  
+                  <h5 className="font-semibold text-gray-700 mb-3 dark:text-gray-200">
+                    Current Cycle
+                  </h5>
+
                   {cycleLoading ? (
                     <div className="flex justify-center py-6">
                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-gray-300 border-t-blue-600"></div>
@@ -1415,37 +1517,49 @@ const handleShowManualWinnerModal = async (equb) => {
                       <div className="flex justify-between items-center">
                         <div className="flex items-center">
                           <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
-                          <span className="font-medium">Cycle {currentCycle.currentCycleNumber}</span>
+                          <span className="font-medium">
+                            Cycle {currentCycle.currentCycleNumber}
+                          </span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full 
-                          ${currentCycle.status === "Active" 
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" 
-                            : currentCycle.status === "Completed" 
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                            : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}
-                        `}>
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full 
+                          ${
+                            currentCycle.status === "Active"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                              : currentCycle.status === "Completed"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+                          }
+                        `}
+                        >
                           {currentCycle.status}
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="text-sm text-gray-600 dark:text-gray-300">
-                          <span className="font-medium">Start Date:</span> {formatDate(currentCycle.startDate)}
+                          <span className="font-medium">Start Date:</span>{" "}
+                          {formatDate(currentCycle.startDate)}
                         </div>
-                        
+
                         {currentCycle.endDate && (
                           <div className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">End Date:</span> {formatDate(currentCycle.endDate)}
+                            <span className="font-medium">End Date:</span>{" "}
+                            {formatDate(currentCycle.endDate)}
                           </div>
                         )}
-                        
-                        {selectedEqub.equbType === "Automatic" && currentCycle.nextDrawDate && (
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">Next Draw Date:</span> {formatDate(currentCycle.nextDrawDate)}
-                          </div>
-                        )}
+
+                        {selectedEqub.equbType === "Automatic" &&
+                          currentCycle.nextDrawDate && (
+                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                              <span className="font-medium">
+                                Next Draw Date:
+                              </span>{" "}
+                              {formatDate(currentCycle.nextDrawDate)}
+                            </div>
+                          )}
                       </div>
-                      
+
                       {/* Winner selection status - show if a winner has been selected */}
                       {currentCycle.hasSelectedWinner && (
                         <div className="mt-2 text-sm text-green-600 flex items-center dark:text-green-400">
@@ -1453,108 +1567,138 @@ const handleShowManualWinnerModal = async (equb) => {
                           Winner has been selected for this cycle
                         </div>
                       )}
-                      
+
                       {/* Admin Actions for Active Cycles */}
-                      {showAdminControls && currentCycle.status === "Active" && (
-                        <div className="flex gap-2 mt-3">
-                          {selectedEqub.equbType === "Automatic" ? (
-                            <button
-                              className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex items-center text-sm"
-                              onClick={() => handleStartCycle(selectedEqub._id)}
-                              disabled={startCycleLoading[selectedEqub._id]}
-                            >
-                              <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                              Start Cycle
-                            </button>
-                          ) : (
-                            <button
-                              className={`px-3 py-1.5 ${
-                                !currentCycle.hasSelectedWinner 
-                                  ? "bg-green-500 hover:bg-green-600" 
-                                  : "bg-gray-400 cursor-not-allowed"
-                              } text-white rounded-lg transition flex items-center text-sm`}
-                              onClick={() => handleShowManualWinnerModal(selectedEqub)}
-                              disabled={winnerSelectionLoading || currentCycle.hasSelectedWinner}
-                              title={currentCycle.hasSelectedWinner ? "A winner has already been selected for this cycle" : ""}
-                            >
-                              <UserCheck className="h-3.5 w-3.5 mr-1" />
-                              Select Winner
-                            </button>
-                          )}
-                        </div>
-                      )}
+                      {showAdminControls &&
+                        currentCycle.status === "Active" && (
+                          <div className="flex gap-2 mt-3">
+                            {selectedEqub.equbType === "Automatic" ? (
+                              <button
+                                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex items-center text-sm"
+                                onClick={() =>
+                                  handleStartCycle(selectedEqub._id)
+                                }
+                                disabled={startCycleLoading[selectedEqub._id]}
+                              >
+                                <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                                Start Cycle
+                              </button>
+                            ) : (
+                              <button
+                                className={`px-3 py-1.5 ${
+                                  !currentCycle.hasSelectedWinner
+                                    ? "bg-green-500 hover:bg-green-600"
+                                    : "bg-gray-400 cursor-not-allowed"
+                                } text-white rounded-lg transition flex items-center text-sm`}
+                                onClick={() =>
+                                  handleShowManualWinnerModal(selectedEqub)
+                                }
+                                disabled={
+                                  winnerSelectionLoading ||
+                                  currentCycle.hasSelectedWinner
+                                }
+                                title={
+                                  currentCycle.hasSelectedWinner
+                                    ? "A winner has already been selected for this cycle"
+                                    : ""
+                                }
+                              >
+                                <UserCheck className="h-3.5 w-3.5 mr-1" />
+                                Select Winner
+                              </button>
+                            )}
+                          </div>
+                        )}
                     </div>
                   ) : (
                     <div className="text-center py-4">
-                      <p className="text-gray-500 dark:text-gray-400">No active cycle found.</p>
-                      
-                      {showAdminControls && selectedEqub.status !== "Completed" && (
-                        <button
-                          className="mt-3 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex items-center text-sm mx-auto"
-                          onClick={() => handleStartCycle(selectedEqub._id)}
-                          disabled={startCycleLoading[selectedEqub._id]}
-                        >
-                          {startCycleLoading[selectedEqub._id] ? (
-                            <span className="animate-pulse">Starting...</span>
-                          ) : (
-                            <>
-                              <PlayCircle className="h-3.5 w-3.5 mr-1" />
-                              Start First Cycle
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <p className="text-gray-500 dark:text-gray-400">
+                        No active cycle found.
+                      </p>
+
+                      {showAdminControls &&
+                        selectedEqub.status !== "Completed" && (
+                          <button
+                            className="mt-3 px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition flex items-center text-sm mx-auto"
+                            onClick={() => handleStartCycle(selectedEqub._id)}
+                            disabled={startCycleLoading[selectedEqub._id]}
+                          >
+                            {startCycleLoading[selectedEqub._id] ? (
+                              <span className="animate-pulse">Starting...</span>
+                            ) : (
+                              <>
+                                <PlayCircle className="h-3.5 w-3.5 mr-1" />
+                                Start First Cycle
+                              </>
+                            )}
+                          </button>
+                        )}
                     </div>
                   )}
                 </div>
-                
+
                 {/* Winners Section */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
-                    <h5 className="font-semibold text-gray-700 dark:text-gray-200">Winners</h5>
-                    
+                    <h5 className="font-semibold text-gray-700 dark:text-gray-200">
+                      Winners
+                    </h5>
+
                     {/* Mark all as read button */}
-                    {winners.length > 0 && winners.some(w => !w.isRead) && (
+                    {winners.length > 0 && winners.some((w) => !w.isRead) && (
                       <button
                         className="text-xs text-blue-600 hover:underline flex items-center dark:text-blue-400"
-                        onClick={() => handleMarkAllWinnersAsRead(selectedEqub._id)}
+                        onClick={() =>
+                          handleMarkAllWinnersAsRead(selectedEqub._id)
+                        }
                       >
                         <Eye className="h-3 w-3 mr-1" />
                         Mark all as read
                       </button>
                     )}
                   </div>
-                  
+
                   {winnersLoading ? (
                     <div className="flex justify-center py-6">
                       <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-gray-300 border-t-blue-600"></div>
                     </div>
                   ) : winners.length > 0 ? (
                     <div className="space-y-3">
-                      {winners.map(winner => (
-                        <div 
-                          key={winner._id} 
-                          className={`p-3 rounded-lg border ${winner.isRead 
-                            ? 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700' 
-                            : 'bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800'}`}
+                      {winners.map((winner) => (
+                        <div
+                          key={winner._id}
+                          className={`p-3 rounded-lg border ${
+                            winner.isRead
+                              ? "bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                              : "bg-blue-50 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800"
+                          }`}
                         >
                           <div className="flex justify-between">
                             <div className="flex items-center">
-                              <Award className={`h-5 w-5 mr-2 ${winner.isRead ? 'text-yellow-500' : 'text-blue-500'}`} />
+                              <Award
+                                className={`h-5 w-5 mr-2 ${
+                                  winner.isRead
+                                    ? "text-yellow-500"
+                                    : "text-blue-500"
+                                }`}
+                              />
                               <div>
                                 <div className="font-medium dark:text-white">
                                   {winner.user.firstName} {winner.user.lastName}
                                 </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  Won on {formatDate(winner.winDate)} (Cycle {winner.cycleNumber})
+                                  Won on {formatDate(winner.winDate)} (Cycle{" "}
+                                  {winner.cycleNumber})
                                 </div>
                               </div>
                             </div>
-                            
+
                             {!winner.isRead && (
                               <button
                                 className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                                onClick={() => handleMarkWinnerAsRead(winner._id)}
+                                onClick={() =>
+                                  handleMarkWinnerAsRead(winner._id)
+                                }
                               >
                                 <Eye className="h-4 w-4" />
                               </button>
@@ -1565,7 +1709,9 @@ const handleShowManualWinnerModal = async (equb) => {
                     </div>
                   ) : (
                     <div className="text-center py-6 bg-gray-50 rounded-lg dark:bg-gray-700">
-                      <p className="text-gray-500 dark:text-gray-400">No winners yet.</p>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        No winners yet.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1591,17 +1737,24 @@ const handleShowManualWinnerModal = async (equb) => {
                   {announcementsLoading[selectedEqub._id] ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-blue-600"></div>
-                      <p className="mt-2 text-gray-600 dark:text-gray-400">Loading announcements...</p>
+                      <p className="mt-2 text-gray-600 dark:text-gray-400">
+                        Loading announcements...
+                      </p>
                     </div>
-                  ) : equbAnnouncements[selectedEqub._id] && equbAnnouncements[selectedEqub._id].length > 0 ? (
-                    equbAnnouncements[selectedEqub._id].map(announcement => (
-                      <div key={announcement._id} className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                  ) : equbAnnouncements[selectedEqub._id] &&
+                    equbAnnouncements[selectedEqub._id].length > 0 ? (
+                    equbAnnouncements[selectedEqub._id].map((announcement) => (
+                      <div
+                        key={announcement._id}
+                        className="bg-gray-50 rounded-lg p-4 dark:bg-gray-700"
+                      >
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <div className="flex items-center">
                               <Megaphone className="h-4 w-4 text-purple-500 mr-2" />
                               <h5 className="font-medium text-gray-800 dark:text-gray-200">
-                                {announcement.createdBy?.firstName || ""} {announcement.createdBy?.lastName || ""}
+                                {announcement.createdBy?.firstName || ""}{" "}
+                                {announcement.createdBy?.lastName || ""}
                               </h5>
                             </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
@@ -1609,7 +1762,7 @@ const handleShowManualWinnerModal = async (equb) => {
                               {formatDate(announcement.dateCreated)}
                             </div>
                           </div>
-                          
+
                           {/* Edit/Delete options (only for creators) */}
                           {showAdminControls && (
                             <div className="relative group">
@@ -1618,15 +1771,23 @@ const handleShowManualWinnerModal = async (equb) => {
                               </button>
                               <div className="absolute right-0 mt-1 w-36 bg-white rounded-md shadow-lg overflow-hidden z-10 invisible group-hover:visible dark:bg-gray-800 border dark:border-gray-700">
                                 <div className="py-1">
-                                  <button 
-                                    onClick={() => handleShowEditAnnouncementModal(announcement)}
+                                  <button
+                                    onClick={() =>
+                                      handleShowEditAnnouncementModal(
+                                        announcement
+                                      )
+                                    }
                                     className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left flex items-center dark:text-gray-300 dark:hover:bg-gray-700"
                                   >
                                     <Edit className="h-3.5 w-3.5 mr-2" />
                                     Edit
                                   </button>
-                                  <button 
-                                    onClick={() => handleShowDeleteAnnouncementConfirmation(announcement)}
+                                  <button
+                                    onClick={() =>
+                                      handleShowDeleteAnnouncementConfirmation(
+                                        announcement
+                                      )
+                                    }
                                     className="px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center dark:text-red-400 dark:hover:bg-gray-700"
                                   >
                                     <Trash2 className="h-3.5 w-3.5 mr-2" />
@@ -1637,12 +1798,16 @@ const handleShowManualWinnerModal = async (equb) => {
                             </div>
                           )}
                         </div>
-                        <p className="text-gray-700 dark:text-gray-300">{announcement.message}</p>
+                        <p className="text-gray-700 dark:text-gray-300">
+                          {announcement.message}
+                        </p>
                       </div>
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <p className="text-gray-500 dark:text-gray-400">No announcements yet.</p>
+                      <p className="text-gray-500 dark:text-gray-400">
+                        No announcements yet.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1664,13 +1829,13 @@ const handleShowManualWinnerModal = async (equb) => {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && equbToDelete && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -1680,12 +1845,16 @@ const handleShowManualWinnerModal = async (equb) => {
                 <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4 dark:bg-red-900">
                   <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Delete Equb</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">
+                  Delete Equb
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Are you sure you want to delete <span className="font-semibold">{equbToDelete.name}</span>? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold">{equbToDelete.name}</span>?
+                  This action cannot be undone.
                 </p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
                 <button
                   className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1702,7 +1871,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   disabled={loadingMap[equbToDelete._id]}
                 >
                   {loadingMap[equbToDelete._id] ? (
-                    <span className="inline-block animate-pulse">Deleting...</span>
+                    <span className="inline-block animate-pulse">
+                      Deleting...
+                    </span>
                   ) : (
                     <>Delete</>
                   )}
@@ -1731,7 +1902,9 @@ const handleShowManualWinnerModal = async (equb) => {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
                   <Megaphone className="h-5 w-5 text-purple-500 mr-2" />
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Make Announcement</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Make Announcement
+                  </h3>
                 </div>
                 <button
                   onClick={() => {
@@ -1745,11 +1918,15 @@ const handleShowManualWinnerModal = async (equb) => {
               </div>
 
               <p className="text-gray-600 mb-4 dark:text-gray-300">
-                Send an announcement to all members of <span className="font-semibold">{equbToAnnounce.name}</span>.
+                Send an announcement to all members of{" "}
+                <span className="font-semibold">{equbToAnnounce.name}</span>.
               </p>
 
               <div className="mb-4">
-                <label htmlFor="announcement" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                <label
+                  htmlFor="announcement"
+                  className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+                >
                   Announcement Message
                 </label>
                 <textarea
@@ -1760,14 +1937,14 @@ const handleShowManualWinnerModal = async (equb) => {
                   rows="4"
                   placeholder="Type your announcement message here..."
                 ></textarea>
-                
+
                 {announcementError && (
                   <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
                     <AlertCircle className="h-4 w-4 mr-1" />
                     {announcementError}
                   </p>
                 )}
-                
+
                 {announcementSuccess && (
                   <p className="mt-1 text-sm text-green-600 flex items-center dark:text-green-400">
                     <Check className="h-4 w-4 mr-1" />
@@ -1775,7 +1952,7 @@ const handleShowManualWinnerModal = async (equb) => {
                   </p>
                 )}
               </div>
-              
+
               <div className="flex justify-end space-x-3">
                 <button
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1793,7 +1970,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   disabled={announcementLoading}
                 >
                   {announcementLoading ? (
-                    <span className="inline-block animate-pulse">Sending...</span>
+                    <span className="inline-block animate-pulse">
+                      Sending...
+                    </span>
                   ) : (
                     <>
                       <Megaphone className="h-4 w-4 mr-1" />
@@ -1825,7 +2004,9 @@ const handleShowManualWinnerModal = async (equb) => {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
                   <Edit className="h-5 w-5 text-yellow-500 mr-2" />
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Announcement</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Edit Announcement
+                  </h3>
                 </div>
                 <button
                   onClick={() => {
@@ -1839,7 +2020,10 @@ const handleShowManualWinnerModal = async (equb) => {
               </div>
 
               <div className="mb-4">
-                <label htmlFor="edit-announcement" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                <label
+                  htmlFor="edit-announcement"
+                  className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+                >
                   Edit Announcement
                 </label>
                 <textarea
@@ -1850,14 +2034,14 @@ const handleShowManualWinnerModal = async (equb) => {
                   rows="4"
                   placeholder="Edit your announcement message..."
                 ></textarea>
-                
+
                 {announcementError && (
                   <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
                     <AlertCircle className="h-4 w-4 mr-1" />
                     {announcementError}
                   </p>
                 )}
-                
+
                 {announcementSuccess && (
                   <p className="mt-1 text-sm text-green-600 flex items-center dark:text-green-400">
                     <Check className="h-4 w-4 mr-1" />
@@ -1865,7 +2049,7 @@ const handleShowManualWinnerModal = async (equb) => {
                   </p>
                 )}
               </div>
-              
+
               <div className="flex justify-end space-x-3">
                 <button
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1883,7 +2067,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   disabled={announcementLoading}
                 >
                   {announcementLoading ? (
-                    <span className="inline-block animate-pulse">Updating...</span>
+                    <span className="inline-block animate-pulse">
+                      Updating...
+                    </span>
                   ) : (
                     <>
                       <Edit className="h-4 w-4 mr-1" />
@@ -1916,12 +2102,15 @@ const handleShowManualWinnerModal = async (equb) => {
                 <div className="mx-auto w-14 h-14 flex items-center justify-center bg-red-100 rounded-full mb-4 dark:bg-red-900">
                   <AlertTriangle className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Delete Announcement</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">
+                  Delete Announcement
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Are you sure you want to delete this announcement? This action cannot be undone.
+                  Are you sure you want to delete this announcement? This action
+                  cannot be undone.
                 </p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
                 <button
                   className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -1938,7 +2127,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   disabled={announcementLoading}
                 >
                   {announcementLoading ? (
-                    <span className="inline-block animate-pulse">Deleting...</span>
+                    <span className="inline-block animate-pulse">
+                      Deleting...
+                    </span>
                   ) : (
                     <>Delete</>
                   )}
@@ -1968,27 +2159,30 @@ const handleShowManualWinnerModal = async (equb) => {
                 <div className="mx-auto w-14 h-14 flex items-center justify-center bg-green-100 rounded-full mb-4 dark:bg-green-900">
                   <Gift className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">Select Winner</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-1 dark:text-white">
+                  Select Winner
+                </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  You are about to randomly select a winner for <span className="font-semibold">{equbToDrawWinner.name}</span>. 
-                  This will advance the Equb to the next cycle.
+                  You are about to randomly select a winner for{" "}
+                  <span className="font-semibold">{equbToDrawWinner.name}</span>
+                  . This will advance the Equb to the next cycle.
                 </p>
               </div>
-              
+
               {winnerSelectionError && (
                 <div className="mb-4 text-center text-red-600 flex items-center justify-center dark:text-red-400">
                   <AlertCircle className="h-5 w-5 mr-2" />
                   {winnerSelectionError}
                 </div>
               )}
-              
+
               {winnerSelectionSuccess && (
                 <div className="mb-4 text-center text-green-600 flex items-center justify-center dark:text-green-400">
                   <Check className="h-5 w-5 mr-2" />
                   Winner selected successfully!
                 </div>
               )}
-              
+
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-6 justify-between">
                 <button
                   className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -2006,7 +2200,9 @@ const handleShowManualWinnerModal = async (equb) => {
                   disabled={winnerSelectionLoading || winnerSelectionSuccess}
                 >
                   {winnerSelectionLoading ? (
-                    <span className="inline-block animate-pulse">Selecting...</span>
+                    <span className="inline-block animate-pulse">
+                      Selecting...
+                    </span>
                   ) : (
                     <>Select Winner</>
                   )}
@@ -2035,7 +2231,9 @@ const handleShowManualWinnerModal = async (equb) => {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center">
                   <UserCheck className="h-5 w-5 text-green-500 mr-2" />
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Select Winner</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Select Winner
+                  </h3>
                 </div>
                 <button
                   onClick={() => {
@@ -2049,14 +2247,19 @@ const handleShowManualWinnerModal = async (equb) => {
               </div>
 
               <p className="text-gray-600 mb-4 dark:text-gray-300">
-                Select a winner for <span className="font-semibold">{equbToDrawWinner.name}</span> from the eligible participants.
+                Select a winner for{" "}
+                <span className="font-semibold">{equbToDrawWinner.name}</span>{" "}
+                from the eligible participants.
               </p>
 
               <div className="mb-4">
-                <label htmlFor="participant-select" className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300">
+                <label
+                  htmlFor="participant-select"
+                  className="block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300"
+                >
                   Select Participant
                 </label>
-                
+
                 {participantsLoading ? (
                   <div className="flex justify-center py-4">
                     <div className="inline-block animate-spin rounded-full h-6 w-6 border-4 border-gray-300 border-t-blue-600"></div>
@@ -2069,7 +2272,7 @@ const handleShowManualWinnerModal = async (equb) => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   >
                     <option value="">-- Select a participant --</option>
-                    {eligibleParticipants.map(participant => (
+                    {eligibleParticipants.map((participant) => (
                       <option key={participant._id} value={participant._id}>
                         {participant.user.firstName} {participant.user.lastName}
                       </option>
@@ -2077,10 +2280,12 @@ const handleShowManualWinnerModal = async (equb) => {
                   </select>
                 ) : (
                   <div className="text-center py-3 bg-gray-50 rounded-lg dark:bg-gray-700">
-                    <p className="text-gray-500 dark:text-gray-400">No eligible participants found.</p>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No eligible participants found.
+                    </p>
                   </div>
                 )}
-                
+
                 {manualWinnerError && (
                   <p className="mt-1 text-sm text-red-600 flex items-center dark:text-red-400">
                     <AlertCircle className="h-4 w-4 mr-1" />
@@ -2100,24 +2305,28 @@ const handleShowManualWinnerModal = async (equb) => {
                       onChange={(e) => setSwitchToAutomatic(e.target.checked)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label htmlFor="switch-automatic" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    <label
+                      htmlFor="switch-automatic"
+                      className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+                    >
                       Switch to automatic mode for future cycles
                     </label>
                   </div>
                   <div className="mt-1 text-xs text-gray-500 flex items-center dark:text-gray-400">
                     <Info className="h-3 w-3 mr-1" />
-                    Future winners will be selected automatically based on the Equb cycle.
+                    Future winners will be selected automatically based on the
+                    Equb cycle.
                   </div>
                 </div>
               )}
-              
+
               {winnerSelectionSuccess && (
                 <div className="mb-4 text-center text-green-600 flex items-center justify-center dark:text-green-400">
                   <Check className="h-5 w-5 mr-2" />
                   Winner selected successfully!
                 </div>
               )}
-              
+
               <div className="flex justify-end space-x-3 mt-4">
                 <button
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
@@ -2132,10 +2341,16 @@ const handleShowManualWinnerModal = async (equb) => {
                 <button
                   className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center"
                   onClick={handleSelectManualWinner}
-                  disabled={winnerSelectionLoading || !selectedParticipant || winnerSelectionSuccess}
+                  disabled={
+                    winnerSelectionLoading ||
+                    !selectedParticipant ||
+                    winnerSelectionSuccess
+                  }
                 >
                   {winnerSelectionLoading ? (
-                    <span className="inline-block animate-pulse">Selecting...</span>
+                    <span className="inline-block animate-pulse">
+                      Selecting...
+                    </span>
                   ) : (
                     <>
                       <UserCheck className="h-4 w-4 mr-1" />

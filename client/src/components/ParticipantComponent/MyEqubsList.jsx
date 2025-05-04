@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import { CreatedEqubs } from "./MyEqubLlistComponents/CreatedEqubs";
 import { JoinedEqubs } from "./MyEqubLlistComponents/JoinedEqubs";
 import { ParticipantEqubs } from "./MyEqubLlistComponents/ParticipantEqubs";
+import { CreateEqub } from "./CreateEqub";
 
 export const MyEqubsList = ({
   equbs,
@@ -11,13 +12,13 @@ export const MyEqubsList = ({
   onEqubDeleted,
   onEqubUpdated,
   onRatingSubmitted,
-  onComplaintSubmitted
+  onComplaintSubmitted,
 }) => {
   // Filter equbs by type
-  const createdEqubs = equbs.filter(equb => equb.type === "created");
-  const joinedEqubs = equbs.filter(equb => equb.type === "joined");
-  const participantEqubs = equbs.filter(equb => equb.type === "participant");
-
+  const createdEqubs = equbs.filter((equb) => equb.type === "created");
+  const joinedEqubs = equbs.filter((equb) => equb.type === "joined");
+  const participantEqubs = equbs.filter((equb) => equb.type === "participant");
+  const [showPopup, setShowPopup] = useState(false);
   return (
     <motion.section
       initial={{ opacity: 0, y: 20 }}
@@ -28,8 +29,10 @@ export const MyEqubsList = ({
         <div className="space-y-8">
           {createdEqubs.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3 dark:text-white">Created by me</h3>
-              <CreatedEqubs 
+              <h3 className="text-lg font-semibold mb-3 dark:text-white">
+                Created by me
+              </h3>
+              <CreatedEqubs
                 equbs={createdEqubs}
                 showAdminControls={showAdminControls}
                 onEqubDeleted={onEqubDeleted}
@@ -37,22 +40,26 @@ export const MyEqubsList = ({
               />
             </div>
           )}
-          
+
           {joinedEqubs.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3 dark:text-white">Joined</h3>
-              <JoinedEqubs 
+              <h3 className="text-lg font-semibold mb-3 dark:text-white">
+                Joined
+              </h3>
+              <JoinedEqubs
                 equbs={joinedEqubs}
                 onRatingSubmitted={onRatingSubmitted}
                 onComplaintSubmitted={onComplaintSubmitted}
               />
             </div>
           )}
-          
+
           {participantEqubs.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3 dark:text-white">Participant</h3>
-              <ParticipantEqubs 
+              <h3 className="text-lg font-semibold mb-3 dark:text-white">
+                Participant
+              </h3>
+              <ParticipantEqubs
                 equbs={participantEqubs}
                 onRatingSubmitted={onRatingSubmitted}
                 onComplaintSubmitted={onComplaintSubmitted}
@@ -67,10 +74,16 @@ export const MyEqubsList = ({
           </p>
           <button
             className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-            onClick={() => window.location.href = "/create-equb"}
+            onClick={() => setShowPopup(true)}
           >
             Create a new Equb
           </button>
+          {showPopup && (
+            <CreateEqub
+              isOpen={showPopup}
+              onClose={() => setShowPopup(false)}
+            />
+          )}
         </div>
       )}
     </motion.section>
