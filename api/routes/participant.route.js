@@ -8,7 +8,8 @@ import {
   leaveEqub,
   getEqubParticipantCount,
   removeParticipant,
-  getEligibleWinners
+  getEligibleWinners,
+  getUserJoinedEqubs
 } from "../controllers/participant.controller.js";
 import { verifyToken } from "../utils/verifyUser.js";
 
@@ -43,4 +44,5 @@ router.get("/eligible-winners/:equbId", getEligibleWinners);
 // Remove a participant from an Equb (creator only)
 router.delete("/:participantId/remove", removeParticipant);
 
+router.get("/joined-equbs/:userId", getUserJoinedEqubs);
 export default router;

@@ -176,4 +176,14 @@ export const updateEqub = async (req, res) => {
     console.error("Error updating equb:", error);
     res.status(500).json({ message: "Server error" });
   }
+};// controllers/equb.controller.js
+export const getUserCreatedEqubs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const equbs = await Equb.find({ creator: userId });
+    res.json(equbs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };

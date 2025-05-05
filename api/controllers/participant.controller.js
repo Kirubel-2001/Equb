@@ -405,3 +405,18 @@ export const removeParticipant = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+// controllers/participant.controller.js
+export const getUserJoinedEqubs = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    
+
+    const participants = await Participant.find({ user: userId }).populate("equb");
+    const joinedEqubs = participants.map(p => p.equb);
+
+    res.json(joinedEqubs);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
