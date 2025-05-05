@@ -1,7 +1,13 @@
 import React from "react";
-import { BarChart3, Users, AlertTriangle, DollarSign, ChevronRight } from "lucide-react";
+import {
+  BarChart3,
+  Users,
+  AlertTriangle,
+  DollarSign,
+  ChevronRight,
+} from "lucide-react";
 
-export const Dashboard = ({ equbs, users, complaints }) => {
+export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
   // Stats for dashboard
   const activeEqubs = equbs.filter((equb) => equb.status === "Active").length;
   const totalParticipants = users.length;
@@ -23,18 +29,13 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                 <BarChart3 className="h-6 w-6 text-indigo-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-gray-500 text-sm">
-                  Active Equbs
-                </h3>
-                <p className="text-2xl font-semibold">
-                  {activeEqubs}
-                </p>
+                <h3 className="text-gray-500 text-sm">Active Equbs</h3>
+                <p className="text-2xl font-semibold">{activeEqubs}</p>
               </div>
             </div>
           </div>
           <div className="h-2 bg-gradient-to-r from-indigo-400 to-indigo-600 mt-6"></div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 pb-0">
             <div className="flex items-center">
@@ -42,18 +43,13 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                 <Users className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-gray-500 text-sm">
-                  Total Users
-                </h3>
-                <p className="text-2xl font-semibold">
-                  {totalParticipants}
-                </p>
+                <h3 className="text-gray-500 text-sm">Total Users</h3>
+                <p className="text-2xl font-semibold">{totalParticipants}</p>
               </div>
             </div>
           </div>
           <div className="h-2 bg-gradient-to-r from-green-400 to-green-600 mt-6"></div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 pb-0">
             <div className="flex items-center">
@@ -61,18 +57,13 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-gray-500 text-sm">
-                  Pending Complaints
-                </h3>
-                <p className="text-2xl font-semibold">
-                  {pendingComplaints}
-                </p>
+                <h3 className="text-gray-500 text-sm">Pending Complaints</h3>
+                <p className="text-2xl font-semibold">{pendingComplaints}</p>
               </div>
             </div>
           </div>
           <div className="h-2 bg-gradient-to-r from-red-400 to-red-600 mt-6"></div>
         </div>
-
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 pb-0">
             <div className="flex items-center">
@@ -80,9 +71,7 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                 <DollarSign className="h-6 w-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <h3 className="text-gray-500 text-sm">
-                  Total Amount
-                </h3>
+                <h3 className="text-gray-500 text-sm">Total Amount</h3>
                 <p className="text-2xl font-semibold">
                   {totalAmount.toLocaleString()} Birr
                 </p>
@@ -94,20 +83,21 @@ export const Dashboard = ({ equbs, users, complaints }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Recent Equbs */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
             <h3 className="text-lg font-semibold text-gray-800">
               Recent Equbs
             </h3>
-            <a
-              href="#"
-              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+            <button
+              onClick={() => setActiveTab("equbs")}
+              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center focus:outline-none"
+              type="button"
             >
               <span>View All</span>
               <ChevronRight className="h-4 w-4 ml-1" />
-            </a>
+            </button>
           </div>
-
           <div className="divide-y">
             {equbs.slice(0, 5).map((equb) => (
               <div
@@ -119,9 +109,7 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                     {equb.name.charAt(0)}
                   </div>
                   <div className="ml-3">
-                    <h4 className="font-medium text-gray-900">
-                      {equb.name}
-                    </h4>
+                    <h4 className="font-medium text-gray-900">{equb.name}</h4>
                     <p className="text-sm text-gray-500">
                       {equb.location} • {equb.participants} members
                     </p>
@@ -148,20 +136,21 @@ export const Dashboard = ({ equbs, users, complaints }) => {
           </div>
         </div>
 
+        {/* Recent Complaints */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
             <h3 className="text-lg font-semibold text-gray-800">
               Recent Complaints
             </h3>
-            <a
-              href="#"
-              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+            <button
+              onClick={() => setActiveTab("complaints")}
+              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center focus:outline-none"
+              type="button"
             >
               <span>View All</span>
               <ChevronRight className="h-4 w-4 ml-1" />
-            </a>
+            </button>
           </div>
-
           <div className="divide-y">
             {complaints.slice(0, 5).map((complaint) => (
               <div
@@ -178,8 +167,7 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                         {complaint.userName}
                       </h4>
                       <p className="text-xs text-gray-500">
-                        {complaint.equbName} •{" "}
-                        {complaint.dateSubmitted}
+                        {complaint.equbName} • {complaint.dateSubmitted}
                       </p>
                     </div>
                   </div>
@@ -202,20 +190,21 @@ export const Dashboard = ({ equbs, users, complaints }) => {
         </div>
       </div>
 
+      {/* Recent Users */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-800">
             Recent Users
           </h3>
-          <a
-            href="#"
-            className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
+          <button
+            onClick={() => setActiveTab("users")}
+            className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center focus:outline-none"
+            type="button"
           >
             <span>View All</span>
             <ChevronRight className="h-4 w-4 ml-1" />
-          </a>
+          </button>
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -254,10 +243,7 @@ export const Dashboard = ({ equbs, users, complaints }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {users.slice(0, 5).map((user) => (
-                <tr
-                  key={user.id}
-                  className="hover:bg-gray-50 transition-colors"
-                >
+                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center text-indigo-600 font-bold">
@@ -271,19 +257,14 @@ export const Dashboard = ({ equbs, users, complaints }) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {user.email}
-                    </div>
+                    <div className="text-sm text-gray-500">{user.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.joinDate}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {user.joinDate}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      Created: {user.equbsCreated} • Joined:{" "}
-                      {user.equbsJoined}
+                      Created: {user.equbsCreated} • Joined: {user.equbsJoined}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-/* eslint-disable-next-line no-unused-vars */
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
@@ -7,29 +6,38 @@ import {
   AlertTriangle,
   BarChart3,
   Search,
-  Filter,
-  ArrowDownUp,
-  Bell,
-  LogOut,
   PanelLeft,
   PanelLeftClose,
 } from "lucide-react";
 import Profile from "../../../components/Profile";
 
 // Import the separated components
-import {Dashboard} from "./Dashboard";
-import {EqubsManagement} from "./Equbs";
-import {UsersManagement} from "./Users";
-import {ComplaintsManagement} from "./Complaints";
+import { Dashboard } from "./Dashboard";
+import { EqubsManagement } from "./Equbs";
+import { UsersManagement } from "./Users";
+import { ComplaintsManagement } from "./Complaints";
+
+// Key for localStorage to persist activeTab
+const ACTIVE_TAB_KEY = "adminDashboardActiveTab";
 
 export const AdminDashboard = () => {
-  // State for active tab
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // --- Persistent Active Tab ---
+  const getInitialTab = () => {
+    // Default to dashboard if nothing is saved
+    return localStorage.getItem(ACTIVE_TAB_KEY) || "dashboard";
+  };
 
-  // State for sidebar collapse
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
+  // Persist activeTab to localStorage
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_TAB_KEY, activeTab);
+  }, [activeTab]);
+
+  // Sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // State for equbs and users data
+  // Data states
   const [equbs, setEqubs] = useState([]);
   const [users, setUsers] = useState([]);
   const [complaints, setComplaints] = useState([]);
@@ -37,126 +45,94 @@ export const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "" });
   const [filterStatus, setFilterStatus] = useState("all");
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState(null);
 
-  // Get auth token from localStorage
-  const getToken = () => {
-    return localStorage.getItem('token');
-  };
+  // Auth
+  const getToken = () => localStorage.getItem("token");
 
-  // Fetch data from API
+  // Fetch Data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const token = getToken();
-        if (!token) {
-          throw new Error("Authentication token not found");
-        }
-        
+        if (!token) throw new Error("Authentication token not found");
+
         const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         };
-        
-        // Fetch equbs
-        const equbsResponse = await fetch('/api/equb/get-equbs', {
-          headers
-        });
-        
-        if (!equbsResponse.ok) {
+
+        // Equbs
+        const equbsResponse = await fetch("/api/equb/get-equbs", { headers });
+        if (!equbsResponse.ok)
           throw new Error(`Error fetching equbs: ${equbsResponse.statusText}`);
-        }
-        
         const equbsData = await equbsResponse.json();
-        
-        // Fetch users
-        const usersResponse = await fetch('/api/user', {
-          headers
-        });
-        
-        if (!usersResponse.ok) {
+
+        // Users
+        const usersResponse = await fetch("/api/user", { headers });
+        if (!usersResponse.ok)
           throw new Error(`Error fetching users: ${usersResponse.statusText}`);
-        }
-        
         const usersData = await usersResponse.json();
-        
-        // Fetch complaints
-        const complaintsResponse = await fetch('/api/complaint/all', {
-          headers
+
+        // Complaints
+        const complaintsResponse = await fetch("/api/complaint/all", {
+          headers,
         });
-        
-        if (!complaintsResponse.ok) {
-          throw new Error(`Error fetching complaints: ${complaintsResponse.statusText}`);
-        }
-        
+        if (!complaintsResponse.ok)
+          throw new Error(
+            `Error fetching complaints: ${complaintsResponse.statusText}`
+          );
         const complaintsData = await complaintsResponse.json();
-        
-        // Transform data to match component expectations if needed
-        const formattedEqubs = equbsData.map(equb => ({
+
+        // Format data
+        const formattedEqubs = equbsData.map((equb) => ({
           id: equb._id,
           name: equb.name,
           location: equb.location,
-          creatorName: equb.creator?.firstName + ' ' + equb.creator?.lastName || 'Unknown',
+          creatorName:
+            (equb.creator?.firstName || "") +
+              " " +
+              (equb.creator?.lastName || "") || "Unknown",
           participants: equb.numberOfParticipants,
           amount: equb.amountPerPerson,
           cycle: equb.cycle,
           type: equb.equbType,
           status: equb.status,
-          lastUpdated: new Date(equb.updatedAt).toISOString().split('T')[0],
+          lastUpdated: new Date(equb.updatedAt).toISOString().split("T")[0],
         }));
-        
-        const formattedUsers = usersData.map(user => ({
+
+        const formattedUsers = usersData.map((user) => ({
           id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
           role: user.role,
-          equbsCreated: 0, // This would be calculated from another endpoint if available
-          equbsJoined: 0, // This would be calculated from another endpoint if available
-          status: "Active", // Assuming all users are active by default
-          joinDate: new Date(user.createdAt).toISOString().split('T')[0],
+          equbsCreated: 0,
+          equbsJoined: 0,
+          status: "Active",
+          joinDate: new Date(user.createdAt).toISOString().split("T")[0],
         }));
-        
-        const formattedComplaints = complaintsData.map(complaint => ({
+
+        const formattedComplaints = complaintsData.map((complaint) => ({
           id: complaint._id,
-          equbName: complaint.equb.name || 'Unknown Equb',
-          userName: complaint.user.firstName + ' ' + complaint.user.lastName || 'Unknown User',
+          equbName: complaint.equb?.name || "Unknown Equb",
+          userName:
+            (complaint.user?.firstName || "") +
+              " " +
+              (complaint.user?.lastName || "") || "Unknown User",
           message: complaint.message,
           status: complaint.status,
-          dateSubmitted: new Date(complaint.dateSubmitted).toISOString().split('T')[0],
+          dateSubmitted: new Date(complaint.dateSubmitted)
+            .toISOString()
+            .split("T")[0],
         }));
-        
-        // Set sample notifications for now
-        // In a real app, these would come from an API or websocket
-        const sampleNotifications = [
-          {
-            id: 1,
-            message: "New user registered",
-            time: "2 hours ago",
-          },
-          {
-            id: 2,
-            message: "New complaint submitted",
-            time: "1 day ago",
-          },
-          {
-            id: 3,
-            message: "Equb cycle completed",
-            time: "3 days ago",
-          }
-        ];
-        
+
         setEqubs(formattedEqubs);
         setUsers(formattedUsers);
         setComplaints(formattedComplaints);
-        setNotifications(sampleNotifications);
-        
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err.message);
@@ -164,11 +140,11 @@ export const AdminDashboard = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
-  // Handle sorting
+  // Sorting
   const requestSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -177,81 +153,70 @@ export const AdminDashboard = () => {
     setSortConfig({ key, direction });
   };
 
-  // Handle actions
+  // Equb delete
   const handleDeleteEqub = async (id) => {
     try {
       const token = getToken();
       const response = await fetch(`/api/equb/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
       if (!response.ok) {
         throw new Error(`Failed to delete equb: ${response.statusText}`);
       }
-      
-      // Update state after successful deletion
       setEqubs(equbs.filter((equb) => equb.id !== id));
-      
     } catch (err) {
       console.error("Error deleting equb:", err);
-      // Show an error message to the user
     }
   };
 
+  // Remove user (UI only)
   const handleRemoveUser = async (id) => {
-    // Note: Your API doesn't seem to have a route for deleting users
-    // This is a placeholder that just updates the UI
-    // In a real app, you would add proper API call
-    
     setUsers(users.filter((user) => user.id !== id));
   };
 
+  // Resolve complaint
   const handleResolveComplaint = async (id) => {
     try {
       const token = getToken();
       const response = await fetch(`/api/complaint/${id}/resolve`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
       if (!response.ok) {
         throw new Error(`Failed to resolve complaint: ${response.statusText}`);
       }
-      
-      // Update state after successful resolution
       setComplaints(
         complaints.map((complaint) =>
-          complaint.id === id ? { ...complaint, status: "Resolved" } : complaint
+          complaint.id === id
+            ? { ...complaint, status: "Resolved" }
+            : complaint
         )
       );
-      
     } catch (err) {
       console.error("Error resolving complaint:", err);
-      // Show an error message to the user
     }
   };
 
-  // Toggle sidebar
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
+  // Sidebar collapse
+  const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar - Fixed */}
       <motion.div
-        className={`${
+        className={`fixed top-0 left-0 h-screen ${
           sidebarCollapsed ? "w-20" : "w-64"
-        } bg-gradient-to-b from-indigo-700 to-indigo-900 text-white transition-all duration-300 flex flex-col z-20`}
+        } bg-gradient-to-b from-indigo-700 to-indigo-900 text-white transition-all duration-300 flex flex-col z-30 shadow-lg`}
         initial={false}
         animate={{ width: sidebarCollapsed ? 80 : 256 }}
+        style={{ minHeight: "100vh" }}
       >
         <div
           className={`p-6 flex ${
@@ -274,91 +239,63 @@ export const AdminDashboard = () => {
         </div>
 
         <nav className="mt-6 flex-1">
-          <div
-            className={`flex items-center px-6 py-3 cursor-pointer ${
-              activeTab === "dashboard"
-                ? "bg-indigo-800 border-l-4 border-white"
-                : "hover:bg-indigo-800"
-            } transition-all`}
-            onClick={() => setActiveTab("dashboard")}
-          >
-            <Home className="h-5 w-5 mr-3" />
-            {!sidebarCollapsed && <span>Dashboard</span>}
-          </div>
-
-          <div
-            className={`flex items-center px-6 py-3 cursor-pointer ${
-              activeTab === "equbs"
-                ? "bg-indigo-800 border-l-4 border-white"
-                : "hover:bg-indigo-800"
-            } transition-all`}
-            onClick={() => setActiveTab("equbs")}
-          >
-            <BarChart3 className="h-5 w-5 mr-3" />
-            {!sidebarCollapsed && <span>Equbs</span>}
-          </div>
-
-          <div
-            className={`flex items-center px-6 py-3 cursor-pointer ${
-              activeTab === "users"
-                ? "bg-indigo-800 border-l-4 border-white"
-                : "hover:bg-indigo-800"
-            } transition-all`}
-            onClick={() => setActiveTab("users")}
-          >
-            <Users className="h-5 w-5 mr-3" />
-            {!sidebarCollapsed && <span>Users</span>}
-          </div>
-
-          <div
-            className={`flex items-center px-6 py-3 cursor-pointer ${
-              activeTab === "complaints"
-                ? "bg-indigo-800 border-l-4 border-white"
-                : "hover:bg-indigo-800"
-            } transition-all`}
-            onClick={() => setActiveTab("complaints")}
-          >
-            <AlertTriangle className="h-5 w-5 mr-3" />
-            {!sidebarCollapsed && <span>Complaints</span>}
-          </div>
-        </nav>
-
-        <div className="p-6">
-          <div
-            className="flex items-center text-indigo-200 hover:text-white cursor-pointer mb-4"
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            <div className="relative">
-              <Bell className="h-5 w-5 mr-3" />
-              {notifications.length > 0 && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {notifications.length}
-                </div>
-              )}
+          {[
+            {
+              key: "dashboard",
+              label: "Dashboard",
+              icon: <Home className="h-5 w-5 mr-3" />,
+            },
+            {
+              key: "equbs",
+              label: "Equbs",
+              icon: <BarChart3 className="h-5 w-5 mr-3" />,
+            },
+            {
+              key: "users",
+              label: "Users",
+              icon: <Users className="h-5 w-5 mr-3" />,
+            },
+            {
+              key: "complaints",
+              label: "Complaints",
+              icon: <AlertTriangle className="h-5 w-5 mr-3" />,
+            },
+          ].map((tab) => (
+            <div
+              key={tab.key}
+              className={`flex items-center px-6 py-3 cursor-pointer ${
+                activeTab === tab.key
+                  ? "bg-indigo-800 border-l-4 border-white"
+                  : "hover:bg-indigo-800"
+              } transition-all`}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.icon}
+              {!sidebarCollapsed && <span>{tab.label}</span>}
             </div>
-            {!sidebarCollapsed && <span>Notifications</span>}
-          </div>
-          <div className="flex items-center text-indigo-200 hover:text-white cursor-pointer">
-            <LogOut className="h-5 w-5 mr-3" />
-            {!sidebarCollapsed && <span>Logout</span>}
-          </div>
-        </div>
+          ))}
+        </nav>
       </motion.div>
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content - Pad left for sidebar */}
+      <div
+        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${
+          sidebarCollapsed ? "ml-20" : "ml-64"
+        }`}
+      >
         {/* Header */}
         <header className="bg-white shadow-sm z-10 sticky top-0">
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center">
               <h2 className="text-xl font-semibold text-gray-800 ml-2">
-                {activeTab === "dashboard" && "Dashboard"}
-                {activeTab === "equbs" && "Manage Equbs"}
-                {activeTab === "users" && "User Management"}
-                {activeTab === "complaints" && "Complaints Management"}
+                {{
+                  dashboard: "Dashboard",
+                  equbs: "Manage Equbs",
+                  users: "User Management",
+                  complaints: "Complaints Management",
+                }[activeTab]}
               </h2>
             </div>
-
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -370,7 +307,6 @@ export const AdminDashboard = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-
               <Profile />
             </div>
           </div>
@@ -394,7 +330,6 @@ export const AdminDashboard = () => {
             </div>
           ) : (
             <AnimatePresence mode="wait">
-              {/* Dashboard */}
               {activeTab === "dashboard" && (
                 <motion.div
                   key="dashboard"
@@ -403,15 +338,14 @@ export const AdminDashboard = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Dashboard 
-                    equbs={equbs} 
-                    users={users} 
-                    complaints={complaints} 
+                  <Dashboard
+                    equbs={equbs}
+                    users={users}
+                    complaints={complaints}
+                    setActiveTab={setActiveTab}
                   />
                 </motion.div>
               )}
-
-              {/* Equbs Management */}
               {activeTab === "equbs" && (
                 <motion.div
                   key="equbs"
@@ -420,7 +354,7 @@ export const AdminDashboard = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <EqubsManagement 
+                  <EqubsManagement
                     equbs={equbs}
                     searchTerm={searchTerm}
                     filterStatus={filterStatus}
@@ -431,8 +365,6 @@ export const AdminDashboard = () => {
                   />
                 </motion.div>
               )}
-
-              {/* Users Management */}
               {activeTab === "users" && (
                 <motion.div
                   key="users"
@@ -441,7 +373,7 @@ export const AdminDashboard = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <UsersManagement 
+                  <UsersManagement
                     users={users}
                     searchTerm={searchTerm}
                     filterStatus={filterStatus}
@@ -452,8 +384,6 @@ export const AdminDashboard = () => {
                   />
                 </motion.div>
               )}
-
-              {/* Complaints */}
               {activeTab === "complaints" && (
                 <motion.div
                   key="complaints"
@@ -462,7 +392,7 @@ export const AdminDashboard = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <ComplaintsManagement 
+                  <ComplaintsManagement
                     complaints={complaints}
                     searchTerm={searchTerm}
                     filterStatus={filterStatus}
@@ -476,45 +406,6 @@ export const AdminDashboard = () => {
           )}
         </main>
       </div>
-
-      {/* Click outside handler for notifications and dropdowns */}
-      {(showNotifications || showDropdown) && (
-        <div
-          className="fixed inset-0 bg-transparent z-10"
-          onClick={() => {
-            setShowNotifications(false);
-            setShowDropdown(false);
-          }}
-        />
-      )}
-      
-      {/* Notifications panel */}
-      {showNotifications && (
-        <div className="absolute top-16 right-6 bg-white rounded-md shadow-lg w-72 z-30 overflow-hidden">
-          <div className="p-3 bg-indigo-600 text-white font-medium">
-            Notifications
-          </div>
-          <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                No new notifications
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className="p-3 border-b hover:bg-gray-50 cursor-pointer"
-                >
-                  <p className="text-gray-800">{notification.message}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {notification.time}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
