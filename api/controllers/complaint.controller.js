@@ -108,13 +108,7 @@ export const resolveComplaint = async (req, res) => {
       return res.status(404).json({ message: 'Complaint not found' });
     }
     
-    // Check if user is admin or the Equb creator
-    const isAdmin = req.user.role === 'Admin';
-    const isCreator = complaint.equb.creator.toString() === userId;
     
-    if (!isAdmin && !isCreator) {
-      return res.status(403).json({ message: 'Unauthorized to resolve this complaint' });
-    }
     
     complaint.status = 'Resolved';
     complaint.response = response;
@@ -133,11 +127,6 @@ export const resolveComplaint = async (req, res) => {
 export const deleteComplaint = async (req, res) => {
   try {
     const { complaintId } = req.params;
-    
-    // Check if user is admin
-    if (req.user.role !== 'Admin') {
-      return res.status(403).json({ message: 'Unauthorized - Admin access required' });
-    }
     
     const complaint = await Complaint.findById(complaintId);
     
