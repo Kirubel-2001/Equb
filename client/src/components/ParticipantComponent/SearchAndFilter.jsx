@@ -127,7 +127,7 @@ export const SearchAndFilter = ({
         <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
         <input
           type="text"
-          placeholder="Search by name or amount..."
+          placeholder="Search by location, name or amount..."
           className="pl-10 pr-4 py-3 w-full rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
           value={searchTerm}
           onChange={(e) => {
