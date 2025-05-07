@@ -39,6 +39,49 @@ export default function Profile() {
   const [msg, setMsg] = useState(null);
   const [pwMsg, setPwMsg] = useState(null);
 
+  // Check token validity on component mount and periodically
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user/me', {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          // If response is not ok, token is invalid or expired
+          handleTokenExpired();
+          return;
+        }
+        
+        const userData = await res.json();
+        setUser(userData);
+        setForm({
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          phone: userData.phone || '',
+        });
+        setLoading(false);
+      } catch (err) {
+        handleTokenExpired();
+      }
+    };
+
+    // Function to handle token expiration
+    const handleTokenExpired = () => {
+      dispatch(deleteUserSuccess(null));
+      setLoading(false);
+      navigate("/");
+    };
+
+    checkAuth();
+
+    // Periodically check token validity (every 5 minutes)
+    const intervalId = setInterval(checkAuth, 5 * 60 * 1000);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [dispatch, navigate]);
+
   // Fetch user data on component mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -63,11 +106,15 @@ export default function Profile() {
       } catch (err) {
         setError(err.message);
         setLoading(false);
+        // If fetching user data fails, redirect to home
+        setTimeout(() => {
+          navigate("/");
+        }, 3000);
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   // Handle sign out
   const handleSignOut = async () => {
@@ -135,6 +182,15 @@ export default function Profile() {
         body: JSON.stringify(updates),
       });
 
+      if (!res.ok) {
+        // Check if the error is due to auth failure
+        if (res.status === 401) {
+          dispatch(deleteUserSuccess(null));
+          navigate("/");
+          return;
+        }
+      }
+
       const data = await res.json();
       if (res.ok) {
         // Update local user state with new data
@@ -188,6 +244,15 @@ export default function Profile() {
         body: JSON.stringify(updates),
       });
 
+      if (!res.ok) {
+        // Check if the error is due to auth failure
+        if (res.status === 401) {
+          dispatch(deleteUserSuccess(null));
+          navigate("/");
+          return;
+        }
+      }
+
       const data = await res.json();
       if (res.ok) {
         setPwMsg({ type: "success", text: "Password updated!" });
@@ -220,11 +285,12 @@ export default function Profile() {
     return (
       <div className="text-red-600 p-4 rounded-md bg-red-50 dark:bg-red-900/20 dark:text-red-400">
         <p>Error loading profile: {error}</p>
+        <p className="mt-1 text-sm">Redirecting to home page...</p>
         <button 
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/')}
           className="mt-2 bg-blue-600 text-white py-1 px-3 rounded-md font-medium hover:bg-blue-700 transition-colors text-sm"
         >
-          Go to Login
+          Go to Home
         </button>
       </div>
     );
@@ -234,12 +300,13 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="text-gray-600 dark:text-gray-300 p-4">
-        <p>No profile data found. Please login again.</p>
+        <p>No profile data found. Session may have expired.</p>
+        <p className="mt-1 text-sm">Redirecting to home page...</p>
         <button 
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/')}
           className="mt-2 bg-blue-600 text-white py-1 px-3 rounded-md font-medium hover:bg-blue-700 transition-colors text-sm"
         >
-          Go to Login
+          Go to Home
         </button>
       </div>
     );
