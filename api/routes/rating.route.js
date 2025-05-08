@@ -10,7 +10,7 @@ import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
 
 // Create or update a rating
-router.post("/",  createOrUpdateRating);
+router.post("/",  verifyToken, createOrUpdateRating);
 
 // Get all ratings for a specific Equb
 router.get("/equb/:equbId", getEqubRatings);
