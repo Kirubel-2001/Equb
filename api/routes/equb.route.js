@@ -5,7 +5,7 @@ import { verifyToken } from "../utils/verifyUser.js";
 const router = express.Router();
 
 router.post("/create-equb",verifyToken, createEqub);
-router.get("/get-equbs", verifyToken, getEqubs);
+router.get("/get-equbs", getEqubs);
 router.get("/my-equbs", verifyToken, getMyEqubs);
 router.get("/joined-equbs", verifyToken, getJoinedEqubs);
 router.delete("/:id", verifyToken, deleteEqub);

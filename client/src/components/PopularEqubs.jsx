@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 /* eslint-disable-next-line no-unused-vars */
 import { motion } from "framer-motion";
 import { ChevronRight, UserPlus, X, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Helper for rendering stars
 function renderStars(average) {
@@ -95,6 +96,7 @@ export default function PopularEqubs({
   activeCategory,
   amountFilter,
   locationFilter,
+  isPublicView = false,
 }) {
   const [activeEqubs, setActiveEqubs] = useState([]);
   const [visibleCount, setVisibleCount] = useState(3);
@@ -103,6 +105,7 @@ export default function PopularEqubs({
   const [participantsMap, setParticipantsMap] = useState({});
   const [ratingsMap, setRatingsMap] = useState({});
   const [loading, setLoading] = useState(true); // <-- loading state
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchEqubsAndDetails = async () => {
@@ -221,6 +224,11 @@ export default function PopularEqubs({
   // ... rest of your handlers and helpers here (unchanged) ...
 
   const handleJoinEqub = async (equbId) => {
+    if (isPublicView) {
+      navigate("/signin");
+      return;
+    }
+
     setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
     try {
       const response = await fetch(`/api/participant/join/${equbId}`, {
@@ -233,40 +241,30 @@ export default function PopularEqubs({
       const data = await response.json();
 
       if (response.ok) {
-        setJoinStatus({
-          ...joinStatus,
+        setJoinStatus((prev) => ({
+          ...prev,
           [equbId]: {
             status: "Pending",
             message: "Join request sent successfully",
           },
-        });
+        }));
       } else {
-        if (data.status) {
-          setJoinStatus({
-            ...joinStatus,
-            [equbId]: {
-              status: data.status,
-              message: data.message,
-            },
-          });
-        } else {
-          setJoinStatus({
-            ...joinStatus,
-            [equbId]: {
-              status: "Error",
-              message: data.message,
-            },
-          });
-        }
+        setJoinStatus((prev) => ({
+          ...prev,
+          [equbId]: {
+            status: data.status || "Error",
+            message: data.message || "Error joining Equb",
+          },
+        }));
       }
-    } catch (error) {
-      setJoinStatus({
-        ...joinStatus,
+    } catch {
+      setJoinStatus((prev) => ({
+        ...prev,
         [equbId]: {
           status: "Error",
           message: "Failed to join. Please try again.",
         },
-      });
+      }));
     } finally {
       setLoadingMap((prev) => ({ ...prev, [equbId]: false }));
     }

@@ -115,6 +115,7 @@ export const ParticipantDashboard = () => {
                 {/* Popular Equbs Section */}
                 {!isTyping && (
                   <PopularEqubs
+                  isPublicView={false}
                     searchTerm={searchTerm}
                     activeCategory={activeCategory}
                     amountFilter={amountFilter}

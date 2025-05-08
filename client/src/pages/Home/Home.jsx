@@ -148,6 +148,7 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <PopularEqubs
+            isPublicView={true}
             searchTerm={searchTerm}
             activeCategory={activeCategory}
             amountFilter={amountFilter}
@@ -167,6 +168,7 @@ const Home = () => {
             Explore All Equbs
           </motion.h2>
           <AllEqubs
+            isPublicView={true}
             searchTerm={searchTerm}
             activeCategory={activeCategory}
             amountFilter={amountFilter}

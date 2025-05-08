@@ -13,8 +13,10 @@ import {
   Star,
   StarHalf
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const AllEqubs = ({
+  isPublicView = false,
   searchTerm = "",
   activeCategory = "all",
   amountFilter = { min: "", max: "" },
@@ -32,6 +34,7 @@ export const AllEqubs = ({
   const [error, setError] = useState(null);
   const [equbRatings, setEqubRatings] = useState({});
   const [participantCounts, setParticipantCounts] = useState({});
+  const navigate = useNavigate();
   const equbsPerPage = 9;
 
   // Fetch equbs on component mount
@@ -165,6 +168,10 @@ export const AllEqubs = ({
   }, [equbs, searchTerm, activeCategory, amountFilter, locationFilter]);
 
   const handleJoinEqub = async (equbId) => {
+    if (isPublicView) {
+      navigate("/signin");
+      return;
+    }
     setLoadingMap((prev) => ({ ...prev, [equbId]: true }));
     try {
       const response = await fetch(`/api/participant/join/${equbId}`, {
