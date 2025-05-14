@@ -15,6 +15,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { CreateEqub } from "./components/ParticipantComponent/CreateEqub";
 import { AllEqubs } from "./components/ParticipantComponent/AllEqubs";
+import { Help } from "./pages/Dashboard/ParticipantDashboard/Help";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
         <Route path="/sidebar" element={<SideBar />} />
         <Route path="/dashboard-header" element={<DashboardHeader />} />
         <Route path="/all-equbs" element={<AllEqubs />} />
+        <Route path="/help" element={<Help />} />
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />

@@ -1,0 +1,21 @@
+<svg width="350" height="90" viewBox="0 0 350 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Symbol -->
+  <g>
+    <!-- Circle outline (subtle, symbolic of unity) -->
+    <circle cx="45" cy="45" r="30" stroke="#2476FF" stroke-width="3" fill="none"/>
+    <!-- Four dots (like people or connection points) -->
+    <circle cx="45" cy="15" r="6" fill="#2476FF"/>
+    <circle cx="75" cy="45" r="6" fill="#2476FF"/>
+    <circle cx="45" cy="75" r="6" fill="#2476FF"/>
+    <circle cx="15" cy="45" r="6" fill="#2476FF"/>
+    <!-- Subtle arcs between dots for collaboration/rotation -->
+    <path d="M51 19 Q65 32 71 45" stroke="#3C8DFF" stroke-width="2" fill="none"/>
+    <path d="M71 45 Q65 58 51 71" stroke="#3C8DFF" stroke-width="2" fill="none"/>
+    <path d="M39 71 Q25 58 19 45" stroke="#3C8DFF" stroke-width="2" fill="none"/>
+    <path d="M19 45 Q25 32 39 19" stroke="#3C8DFF" stroke-width="2" fill="none"/>
+  </g>
+  <!-- Brand Name -->
+  <text x="100" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="38" fill="#1A3D7C" font-weight="bold" letter-spacing="0.5">
+    Equb <tspan font-weight="normal" fill="#2476FF">Hub</tspan>
+  </text>
+</svg>

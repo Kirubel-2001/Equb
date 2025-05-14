@@ -54,7 +54,7 @@ export const Header = () => {
                     isScrolled ? "text-indigo-600" : "text-white"
                   }`}
                 >
-                  EQUB
+                  <img src={isScrolled ? "/logo-dark.svg" : "/logo-light.svg"} alt="Equb Hub Logo" className="h-10" />
                 </span>
               </motion.div>
             </div>

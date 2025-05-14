@@ -1,0 +1,19 @@
+<svg width="350" height="90" viewBox="0 0 350 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon -->
+  <g>
+    <circle cx="45" cy="45" r="30" stroke="#FFFFFF" stroke-width="3" fill="none"/>
+    <circle cx="45" cy="15" r="6" fill="#FFFFFF"/>
+    <circle cx="75" cy="45" r="6" fill="#FFFFFF"/>
+    <circle cx="45" cy="75" r="6" fill="#FFFFFF"/>
+    <circle cx="15" cy="45" r="6" fill="#FFFFFF"/>
+    <path d="M51 19 Q65 32 71 45" stroke="#A5C9FF" stroke-width="2" fill="none"/>
+    <path d="M71 45 Q65 58 51 71" stroke="#A5C9FF" stroke-width="2" fill="none"/>
+    <path d="M39 71 Q25 58 19 45" stroke="#A5C9FF" stroke-width="2" fill="none"/>
+    <path d="M19 45 Q25 32 39 19" stroke="#A5C9FF" stroke-width="2" fill="none"/>
+  </g>
+  <!-- Brand Name -->
+  <text x="100" y="54" font-family="Segoe UI, Arial, sans-serif" font-size="38" font-weight="bold" letter-spacing="0.5">
+    <tspan fill="#FFFFFF">Equb </tspan>
+    <tspan fill="#A5C9FF" font-weight="normal">Hub</tspan>
+  </text>
+</svg>

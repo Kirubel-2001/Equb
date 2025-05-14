@@ -12,6 +12,7 @@ import PopularEqubs from "../../../components/PopularEqubs";
 import { AllEqubs } from "../../../components/ParticipantComponent/AllEqubs";
 import { SearchAndFilter } from "../../../components/ParticipantComponent/SearchAndFilter";
 import { Notifications } from "./Notifications";
+import { Help } from "./Help";
 
 export const ParticipantDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -26,6 +27,7 @@ export const ParticipantDashboard = () => {
   const isDashboardOpen = activeItem === "dashboard";
   const isMyEqubsOpen = activeItem === "myEqubs";
   const isNotificationsOpen = activeItem === "notifications";
+  const isHelpOpen = activeItem === "help";
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -140,6 +142,9 @@ export const ParticipantDashboard = () => {
           
           {/* Notifications section */}
           {isNotificationsOpen && <Notifications />}
+
+          {/* Help section */}
+          {isHelpOpen && <Help />}
           
         </main>
         
