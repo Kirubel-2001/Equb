@@ -210,11 +210,11 @@ export const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar - Fixed */}
+      {/* Sidebar - Fixed with white background */}
       <motion.div
         className={`fixed top-0 left-0 h-screen ${
           sidebarCollapsed ? "w-20" : "w-64"
-        } bg-gradient-to-b from-indigo-700 to-indigo-900 text-white transition-all duration-300 flex flex-col z-30 shadow-lg`}
+        } bg-white text-gray-800 transition-all duration-300 flex flex-col z-30 shadow-md`}
         initial={false}
         animate={{ width: sidebarCollapsed ? 80 : 256 }}
         style={{ minHeight: "100vh" }}
@@ -222,13 +222,13 @@ export const AdminDashboard = () => {
         <div
           className={`p-6 flex ${
             sidebarCollapsed ? "justify-center" : "justify-between"
-          } items-center`}
+          } items-center border-b border-gray-100`}
         >
           {!sidebarCollapsed && (
-            <h1 className="text-2xl font-bold tracking-tight">Equb Admin</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-indigo-700">Equb Admin</h1>
           )}
           <button
-            className="p-2 rounded-full hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-50"
+            className="p-2 rounded-full text-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-50"
             onClick={toggleSidebar}
           >
             {sidebarCollapsed ? (
@@ -266,12 +266,14 @@ export const AdminDashboard = () => {
               key={tab.key}
               className={`flex items-center px-6 py-3 cursor-pointer ${
                 activeTab === tab.key
-                  ? "bg-indigo-800 border-l-4 border-white"
-                  : "hover:bg-indigo-800"
+                  ? "bg-indigo-50 text-indigo-700 border-l-4 border-indigo-700"
+                  : "hover:bg-gray-50 text-gray-600 hover:text-indigo-600"
               } transition-all`}
               onClick={() => setActiveTab(tab.key)}
             >
-              {tab.icon}
+              <div className={activeTab === tab.key ? "text-indigo-700" : "text-gray-500"}>
+                {tab.icon}
+              </div>
               {!sidebarCollapsed && <span>{tab.label}</span>}
             </div>
           ))}
