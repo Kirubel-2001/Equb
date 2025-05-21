@@ -7,7 +7,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
+export const Dashboard = ({ equbs, users, complaints, setActiveTab, searchTerm }) => {
   // Stats for dashboard
   const activeEqubs = equbs.filter((equb) => equb.status === "Active").length;
   const totalParticipants = users.length;
@@ -19,9 +19,33 @@ export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
     0
   );
 
+  // Lowercase searchTerm for case-insensitive search
+  const search = searchTerm?.toLowerCase() || "";
+
+  // Filter functions
+  const filterEqubs = (equb) =>
+    !search ||
+    equb.name.toLowerCase().includes(search) ||
+    equb.location?.toLowerCase().includes(search) ||
+    equb.status?.toLowerCase().includes(search);
+
+  const filterComplaints = (complaint) =>
+    !search ||
+    complaint.userName?.toLowerCase().includes(search) ||
+    complaint.equbName?.toLowerCase().includes(search) ||
+    complaint.status?.toLowerCase().includes(search) ||
+    complaint.message?.toLowerCase().includes(search);
+
+  const filterUsers = (user) =>
+    !search ||
+    `${user.firstName} ${user.lastName}`.toLowerCase().includes(search) ||
+    user.email?.toLowerCase().includes(search) ||
+    user.status?.toLowerCase().includes(search);
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {/* ...STAT BOXES REMAIN UNCHANGED... */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 pb-0">
             <div className="flex items-center">
@@ -99,7 +123,7 @@ export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
             </button>
           </div>
           <div className="divide-y">
-            {equbs.slice(0, 5).map((equb) => (
+            {equbs.filter(filterEqubs).slice(0, 5).map((equb) => (
               <div
                 key={equb.id}
                 className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
@@ -152,7 +176,7 @@ export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
             </button>
           </div>
           <div className="divide-y">
-            {complaints.slice(0, 5).map((complaint) => (
+            {complaints.filter(filterComplaints).slice(0, 5).map((complaint) => (
               <div
                 key={complaint.id}
                 className="p-4 hover:bg-gray-50 transition-colors"
@@ -242,7 +266,7 @@ export const Dashboard = ({ equbs, users, complaints, setActiveTab }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.slice(0, 5).map((user) => (
+              {users.filter(filterUsers).slice(0, 5).map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

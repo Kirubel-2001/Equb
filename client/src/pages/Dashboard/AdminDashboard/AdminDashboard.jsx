@@ -343,6 +343,7 @@ export const AdminDashboard = () => {
                 >
                   <Dashboard
                     equbs={equbs}
+                    searchTerm={searchTerm}
                     users={users}
                     complaints={complaints}
                     setActiveTab={setActiveTab}
