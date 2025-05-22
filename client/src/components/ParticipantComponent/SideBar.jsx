@@ -217,22 +217,6 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
                 {isSidebarOpen && <span className="ml-3">Help</span>}
               </a>
             </li>
-            <li>
-              <a
-                href="#"
-                onClick={() => handleItemClick("settings")}
-                className={`flex items-center ${
-                  isSidebarOpen ? "px-4" : "justify-center px-2"
-                } py-3 rounded-lg mx-2 ${
-                  activeItem === "settings" 
-                    ? "text-blue-700 bg-blue-50 font-medium" 
-                    : "text-gray-600 hover:bg-gray-100"
-                } transition`}
-              >
-                <Settings className="h-5 w-5 flex-shrink-0" />
-                {isSidebarOpen && <span className="ml-3">Settings</span>}
-              </a>
-            </li>
           </ul>
         </div>
       </div>
