@@ -177,7 +177,7 @@ export const MyEqubs = () => {
       // Calculate stats
       const created = createdEqubs.length;
       const activeCreated = createdEqubs.filter(
-        (e) => e.status === "active"
+        (e) => e.status === "Active"
       ).length;
       const totalJoined = joinedEqubs.length;
 
@@ -601,7 +601,7 @@ export const MyEqubs = () => {
       // Only decrement active count if the deleted equb was active
       activeCreated:
         prevStats.activeCreated -
-        (equbs.find((e) => e._id === deletedEqubId && e.status === "active")
+        (equbs.find((e) => e._id === deletedEqubId && e.status === "Active")
           ? 1
           : 0),
     }));
