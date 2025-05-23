@@ -5,7 +5,10 @@ import {
   getEqubComplaints, 
   getAllComplaints,
   resolveComplaint,
-  deleteComplaint
+  deleteComplaint,
+  markComplaintAsRead,
+  markAllComplaintsAsRead,
+  getComplaintReadStatus
 } from '../controllers/complaint.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
 
@@ -28,5 +31,14 @@ router.patch('/:complaintId/resolve', verifyToken, resolveComplaint);
 
 // Delete a complaint (admin only)
 router.delete('/:complaintId', deleteComplaint);
+
+// Mark a single complaint as read
+router.post("/:complaintId/read", verifyToken, markComplaintAsRead);
+
+// Mark all complaints in an Equb as read
+router.post("/equb/:equbId/read-all", verifyToken, markAllComplaintsAsRead);
+
+// Get read status of complaints for a user
+router.get("/equb/:equbId/read-status", verifyToken, getComplaintReadStatus);
 
 export default router;

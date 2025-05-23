@@ -69,6 +69,7 @@ export const getEqubComplaints = async (req, res) => {
     
     const complaints = await Complaint.find({ equb: equbId })
       .populate('user', 'firstName lastName')
+      .populate('equb', 'name') 
       .sort({ dateSubmitted: -1 });
     
     res.status(200).json(complaints);
@@ -140,5 +141,131 @@ export const deleteComplaint = async (req, res) => {
   } catch (error) {
     console.error('Error deleting complaint:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Mark a single complaint as read
+export const markComplaintAsRead = async (req, res) => {
+  try {
+    const { complaintId } = req.params;
+    const userId = req.user.userId;
+
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    // Check if user already read this complaint
+    const alreadyRead = 
+      complaint.readBy?.some((reader) => reader.user.toString() === userId) ||
+      false;
+
+    if (!alreadyRead) {
+      // Initialize readBy if it doesn't exist
+      if (!complaint.readBy) {
+        complaint.readBy = [];
+      }
+
+      // Add user to readBy array
+      complaint.readBy.push({
+        user: userId,
+        readAt: new Date(),
+      });
+
+      await complaint.save();
+    }
+
+    res.status(200).json({ message: "Complaint marked as read" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Mark all complaints in an Equb as read
+export const markAllComplaintsAsRead = async (req, res) => {
+  try {
+    const { equbId } = req.params;
+    const userId = req.user.userId;
+
+    // Verify equb exists
+    const equb = await Equb.findById(equbId);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+
+    // Check if user is the creator of the Equb
+    const isCreator = equb.creator.toString() === userId;
+    if (!isCreator) {
+      return res.status(403).json({ message: "Only Equb creators can mark all complaints as read" });
+    }
+
+    // Get all complaints for this equb
+    const complaints = await Complaint.find({ equb: equbId });
+
+    // For each complaint, add the user to readBy if not already there
+    const updateOperations = complaints.map((complaint) => {
+      // Initialize readBy if it doesn't exist
+      if (!complaint.readBy) {
+        complaint.readBy = [];
+      }
+
+      const alreadyRead = complaint.readBy.some(
+        (reader) => reader.user.toString() === userId
+      );
+
+      if (!alreadyRead) {
+        complaint.readBy.push({
+          user: userId,
+          readAt: new Date(),
+        });
+        return complaint.save();
+      }
+      return Promise.resolve();
+    });
+
+    await Promise.all(updateOperations);
+
+    res.status(200).json({ message: "All complaints marked as read" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get read status of complaints for a user
+export const getComplaintReadStatus = async (req, res) => {
+  try {
+    const { equbId } = req.params;
+    const userId = req.user.userId;
+
+    // Verify equb exists
+    const equb = await Equb.findById(equbId);
+    if (!equb) {
+      return res.status(404).json({ message: "Equb not found" });
+    }
+
+    // Check if user is the creator of the Equb
+    const isCreator = equb.creator.toString() === userId;
+    if (!isCreator) {
+      return res.status(403).json({ message: "Only Equb creators can view complaint read status" });
+    }
+
+    // Get all complaints for this equb
+    const complaints = await Complaint.find({ equb: equbId });
+
+    // Count total and unread complaints
+    const total = complaints.length;
+    const unread = complaints.filter(
+      (complaint) =>
+        !complaint.readBy ||
+        !complaint.readBy.some((reader) => reader.user.toString() === userId)
+    ).length;
+
+    res.status(200).json({
+      total,
+      unread,
+      read: total - unread,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

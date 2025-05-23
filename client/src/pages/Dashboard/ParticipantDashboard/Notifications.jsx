@@ -8,6 +8,7 @@ import {
   Clock,
   ArrowRight,
   Trophy,
+  MessageCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -16,16 +17,18 @@ export const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [userEqubs, setUserEqubs] = useState([]);
+  const [createdEqubs, setCreatedEqubs] = useState([]);
 
   useEffect(() => {
     fetchUserEqubs();
+    fetchCreatedEqubs();
   }, []);
 
   useEffect(() => {
-    if (userEqubs.length > 0) {
+    if (userEqubs.length > 0 || createdEqubs.length > 0) {
       fetchNotifications();
     }
-  }, [userEqubs]);
+  }, [userEqubs, createdEqubs]);
 
   // First fetch the equbs the user participates in
   const fetchUserEqubs = async () => {
@@ -48,6 +51,26 @@ export const Notifications = () => {
     }
   };
 
+  // Fetch equbs created by the user (for complaint notifications)
+  const fetchCreatedEqubs = async () => {
+    try {
+      const response = await fetch("/api/equb/my-equbs", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch created equbs");
+      }
+
+      const equbData = await response.json();
+      setCreatedEqubs(equbData);
+    } catch (error) {
+      console.error("Failed to fetch created equbs:", error);
+    }
+  };
+
   const fetchNotifications = async () => {
     setLoading(true);
     try {
@@ -63,6 +86,7 @@ export const Notifications = () => {
       }
 
       const announcementData = await announcementResponse.json();
+      
       // Fetch winners for each equb the user participates in
       const winnersPromises = userEqubs.map((equb) =>
         fetch(`/api/winner/equb/${equb._id}`, {
@@ -74,6 +98,18 @@ export const Notifications = () => {
 
       const winnersResults = await Promise.all(winnersPromises);
       const winnersData = winnersResults.flat();
+
+      // Fetch complaints for each equb the user created
+      const complaintsPromises = createdEqubs.map((equb) =>
+        fetch(`/api/complaint/equb/${equb._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }).then((res) => (res.ok ? res.json() : []))
+      );
+
+      const complaintsResults = await Promise.all(complaintsPromises);
+      const complaintsData = complaintsResults.flat();
 
       // Transform the announcements into notification format
       const announcementNotifications = announcementData.map(
@@ -88,6 +124,7 @@ export const Notifications = () => {
           equbId: announcement.equb?._id,
         })
       );
+      
       // Transform winners into notification format
       const winnerNotifications = winnersData.map((winner) => ({
         id: `winner-${winner._id}`,
@@ -107,10 +144,31 @@ export const Notifications = () => {
         winnerName: `${winner.user.firstName} ${winner.user.lastName}`,
       }));
 
+      // Transform complaints into notification format
+      const complaintNotifications = complaintsData.map((complaint) => ({
+        id: `complaint-${complaint._id}`,
+        equbName: complaint.equb?.name || "Unknown Equb",
+        message: `New complaint: ${complaint.message.substring(0, 60)}${
+          complaint.message.length > 60 ? "..." : ""
+        }`,
+        type: "complaint",
+        dateCreated: new Date(complaint.dateSubmitted),
+        isRead: complaint.readBy?.some(
+          (reader) => reader.user === localStorage.getItem("userId")
+        ) || false,
+        complaintId: complaint._id,
+        equbId: complaint.equb,
+        status: complaint.status,
+        fromUser: complaint.user?.firstName ? 
+          `${complaint.user.firstName} ${complaint.user.lastName}` : 
+          "Unknown User",
+      }));
+
       // Combine all notifications and sort by date
       const allNotifications = [
         ...announcementNotifications,
         ...winnerNotifications,
+        ...complaintNotifications,
       ].sort((a, b) => b.dateCreated - a.dateCreated);
 
       setNotifications(allNotifications);
@@ -152,7 +210,7 @@ export const Notifications = () => {
             throw new Error("Failed to mark announcement as read");
           }
         } else if (notification.type === "winner" && notification.winnerId) {
-          // Mark winner notification as read using the new endpoint
+          // Mark winner notification as read
           const response = await fetch(
             `/api/winner/${notification.winnerId}/read`,
             {
@@ -165,6 +223,21 @@ export const Notifications = () => {
 
           if (!response.ok) {
             throw new Error("Failed to mark winner notification as read");
+          }
+        } else if (notification.type === "complaint" && notification.complaintId) {
+          // Mark complaint notification as read
+          const response = await fetch(
+            `/api/complaint/${notification.complaintId}/read`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to mark complaint as read");
           }
         }
       }
@@ -180,6 +253,7 @@ export const Notifications = () => {
       // Group notifications by type and equbId
       const announcementsByEqub = {};
       const winnersByEqub = {};
+      const complaintsByEqub = {};
 
       notifications.forEach((notification) => {
         if (!notification.isRead) {
@@ -193,6 +267,11 @@ export const Notifications = () => {
               winnersByEqub[notification.equbId] = [];
             }
             winnersByEqub[notification.equbId].push(notification);
+          } else if (notification.type === "complaint" && notification.equbId) {
+            if (!complaintsByEqub[notification.equbId]) {
+              complaintsByEqub[notification.equbId] = [];
+            }
+            complaintsByEqub[notification.equbId].push(notification);
           }
         }
       });
@@ -224,10 +303,22 @@ export const Notifications = () => {
           })
       );
 
+      // Make API calls for complaints by equb
+      const complaintPromises = Object.keys(complaintsByEqub).map(
+        (equbId) =>
+          fetch(`/api/complaint/equb/${equbId}/read-all`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          })
+      );
+
       // Combine all promises
       const results = await Promise.all([
         ...announcementPromises,
         ...winnerPromises,
+        ...complaintPromises,
       ]);
 
       // Check if any request failed
@@ -255,6 +346,9 @@ export const Notifications = () => {
     } else if (notification.type === "winner" && notification.equbId) {
       // Navigate to winner details in the equb
       window.location.href = `/equbs/${notification.equbId}/winners`;
+    } else if (notification.type === "complaint" && notification.equbId) {
+      // Navigate to complaint details in the equb
+      window.location.href = `/equbs/${notification.equbId}/complaints`;
     }
   };
 
@@ -276,6 +370,8 @@ export const Notifications = () => {
         return <Clock className="h-6 w-6 text-orange-500" />;
       case "announcement":
         return <AlertCircle className="h-6 w-6 text-blue-500" />;
+      case "complaint":
+        return <MessageCircle className="h-6 w-6 text-red-500" />;
       default:
         return <Bell className="h-6 w-6 text-gray-500" />;
     }
@@ -291,6 +387,8 @@ export const Notifications = () => {
         return "bg-orange-50";
       case "announcement":
         return "bg-blue-50";
+      case "complaint":
+        return "bg-red-50";
       default:
         return "bg-gray-50";
     }
@@ -325,7 +423,7 @@ export const Notifications = () => {
 
       {/* Filter tabs */}
       <div className="flex space-x-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-        {["all", "unread", "winner", "announcement"].map((filter) => (
+        {["all", "unread", "winner", "announcement", "complaint"].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
@@ -373,6 +471,8 @@ export const Notifications = () => {
                           ? "text-gray-800"
                           : notification.type === "winner"
                           ? "text-yellow-800"
+                          : notification.type === "complaint"
+                          ? "text-red-800"
                           : "text-blue-800"
                       }`}
                     >
@@ -383,6 +483,15 @@ export const Notifications = () => {
                             Cycle {notification.cycleNumber}
                           </span>
                         )}
+                      {notification.type === "complaint" && (
+                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                          notification.status === "Resolved" 
+                            ? "bg-green-200 text-green-800" 
+                            : "bg-red-200 text-red-800"
+                        }`}>
+                          {notification.status || "Pending"}
+                        </span>
+                      )}
                     </h3>
                     <span className="text-xs text-gray-500">
                       {formatDistanceToNow(notification.dateCreated, {
@@ -401,6 +510,12 @@ export const Notifications = () => {
                   {notification.type === "winner" && notification.amountWon && (
                     <p className="text-sm font-medium text-green-600 mt-1">
                       Amount: {notification.amountWon.toLocaleString()} birr
+                    </p>
+                  )}
+
+                  {notification.type === "complaint" && notification.fromUser && (
+                    <p className="text-sm font-medium text-gray-600 mt-1">
+                      From: {notification.fromUser}
                     </p>
                   )}
 

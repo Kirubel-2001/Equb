@@ -35,6 +35,19 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
       
       const equbData = await equbsResponse.json();
       
+      // Fetch equbs created by the user (needed for complaint notifications)
+      const createdEqubsResponse = await fetch("/api/equb/my-equbs", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      
+      if (!createdEqubsResponse.ok) {
+        throw new Error("Failed to fetch created equbs");
+      }
+      
+      const createdEqubData = await createdEqubsResponse.json();
+      
       // Fetch all announcements from the server with read status
       const announcementResponse = await fetch("/api/announcement", {
         headers: {
@@ -66,8 +79,30 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
       // Count unread winner notifications
       const unreadWinnerCount = winnersData.filter(winner => !winner.isRead).length;
       
+      // Fetch complaints for each equb the user created
+      const complaintsPromises = createdEqubData.map((equb) =>
+        fetch(`/api/complaint/equb/${equb._id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }).then((res) => (res.ok ? res.json() : []))
+      );
+      
+      const complaintsResults = await Promise.all(complaintsPromises);
+      const complaintsData = complaintsResults.flat();
+      
+      // Get user ID from localStorage
+      const userId = localStorage.getItem("userId");
+      
+      // Count unread complaint notifications
+      const unreadComplaintCount = complaintsData.filter(complaint => 
+        !complaint.readBy || !complaint.readBy.some(reader => 
+          reader.user === userId || reader.user._id === userId
+        )
+      ).length;
+      
       // Calculate total unread notifications
-      const totalUnreadCount = unreadAnnouncementCount + unreadWinnerCount;
+      const totalUnreadCount = unreadAnnouncementCount + unreadWinnerCount + unreadComplaintCount;
       
       setNotificationsCount(totalUnreadCount);
     } catch (error) {
