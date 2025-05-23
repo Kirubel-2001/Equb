@@ -155,8 +155,8 @@ export const markComplaintAsRead = async (req, res) => {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    // Check if user already read this complaint
-    const alreadyRead = 
+    // Check if user already read this winner announcement
+    const alreadyRead =
       complaint.readBy?.some((reader) => reader.user.toString() === userId) ||
       false;
 
@@ -174,7 +174,6 @@ export const markComplaintAsRead = async (req, res) => {
 
       await complaint.save();
     }
-
     res.status(200).json({ message: "Complaint marked as read" });
   } catch (error) {
     res.status(500).json({ message: error.message });

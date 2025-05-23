@@ -95,11 +95,16 @@ export const SideBar = ({ onToggle, onNavigate, activeItem }) => {
       const userId = localStorage.getItem("userId");
       
       // Count unread complaint notifications
-      const unreadComplaintCount = complaintsData.filter(complaint => 
-        !complaint.readBy || !complaint.readBy.some(reader => 
-          reader.user === userId || reader.user._id === userId
-        )
-      ).length;
+      // Count unread complaint notifications - ONLY RESOLVED ONES
+const unreadComplaintCount = complaintsData
+  .filter(complaint => complaint.status === "Resolved") // Only count resolved complaints
+  .filter(complaint => 
+    !complaint.readBy || !complaint.readBy.some(reader => 
+      reader.user === userId || 
+      reader.user._id === userId ||
+      reader.user.toString() === userId
+    )
+  ).length;
       
       // Calculate total unread notifications
       const totalUnreadCount = unreadAnnouncementCount + unreadWinnerCount + unreadComplaintCount;

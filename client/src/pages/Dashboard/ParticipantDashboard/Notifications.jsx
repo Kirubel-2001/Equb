@@ -144,25 +144,37 @@ export const Notifications = () => {
         winnerName: `${winner.user.firstName} ${winner.user.lastName}`,
       }));
 
-      // Transform complaints into notification format
-      const complaintNotifications = complaintsData.map((complaint) => ({
-        id: `complaint-${complaint._id}`,
-        equbName: complaint.equb?.name || "Unknown Equb",
-        message: `New complaint: ${complaint.message.substring(0, 60)}${
-          complaint.message.length > 60 ? "..." : ""
-        }`,
-        type: "complaint",
-        dateCreated: new Date(complaint.dateSubmitted),
-        isRead: complaint.readBy?.some(
-          (reader) => reader.user === localStorage.getItem("userId")
-        ) || false,
-        complaintId: complaint._id,
-        equbId: complaint.equb,
-        status: complaint.status,
-        fromUser: complaint.user?.firstName ? 
-          `${complaint.user.firstName} ${complaint.user.lastName}` : 
-          "Unknown User",
-      }));
+// Transform complaints into notification format - ONLY RESOLVED ONES
+const complaintNotifications = complaintsData
+  .filter(complaint => complaint.status === "Resolved") // Only include resolved complaints
+  .map((complaint) => {
+    // Get current user ID from localStorage
+    const currentUserId = localStorage.getItem("userId");
+    
+    // Check if current user has read this complaint
+    const isRead = complaint.readBy?.some((reader) => {
+      // Handle different possible formats of user ID in readBy
+      const readerUserId = reader.user?._id || reader.user?.toString() || reader.user;
+      return readerUserId === currentUserId;
+    }) || false;
+
+    return {
+      id: `complaint-${complaint._id}`,
+      equbName: complaint.equb?.name || "Unknown Equb",
+      message: `Resolved complaint: ${complaint.response?.substring(0, 60) || complaint.message?.substring(0, 60)}${
+        (complaint.response?.length || complaint.message?.length || 0) > 60 ? "..." : ""
+      }`,
+      type: "complaint",
+      dateCreated: new Date(complaint.dateSubmitted),
+      isRead: isRead,
+      complaintId: complaint._id,
+      equbId: complaint.equb?._id || complaint.equb,
+      status: complaint.status,
+      fromUser: complaint.user?.firstName ? 
+        `${complaint.user.firstName} ${complaint.user.lastName}` : 
+        "Unknown User",
+    };
+  });
 
       // Combine all notifications and sort by date
       const allNotifications = [
