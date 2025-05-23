@@ -46,7 +46,6 @@ export const MyEqubs = () => {
     activeCreated: 0,
     totalJoined: 0,
     pendingRequests: 0,
-    nextDue: null,
   });
 
   // Clear toast after delay
@@ -186,18 +185,11 @@ export const MyEqubs = () => {
         .filter((e) => e.isCreator)
         .reduce((sum, equb) => sum + (equb.pendingCount || 0), 0);
 
-      // Find next due equb
-      const now = new Date();
-      const upcoming = allEqubs
-        .filter((e) => e.nextDueDate && new Date(e.nextDueDate) > now)
-        .sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
-
       setStats({
         totalCreated: created,
         activeCreated: activeCreated,
         totalJoined,
         pendingRequests: totalPending,
-        nextDue: upcoming.length > 0 ? upcoming[0] : null,
       });
     } catch (err) {
       console.error("Error fetching equbs:", err);
@@ -724,17 +716,6 @@ export const MyEqubs = () => {
     });
   };
 
-  const getRemainingDays = (dateString) => {
-    if (!dateString) return null;
-
-    const now = new Date();
-    const dueDate = new Date(dateString);
-    const diffTime = dueDate - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diffDays;
-  };
-
   const getFilteredEqubs = () => {
     return equbs.filter(
       (equb) =>
@@ -806,7 +787,7 @@ export const MyEqubs = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
         >
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-gray-700">
             <div className="flex items-start justify-between">
@@ -853,37 +834,6 @@ export const MyEqubs = () => {
               <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg">
                 <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
               </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-gray-700">
-            <div className="flex flex-col">
-              <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                Next Due Payment
-              </span>
-              {stats.nextDue ? (
-                <div className="mt-2">
-                  <p className="font-medium text-sm dark:text-white">
-                    {stats.nextDue.name}
-                  </p>
-                  <div className="flex items-center mt-1">
-                    <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-300 mr-1" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {formatDate(stats.nextDue.nextDueDate)}
-                    </span>
-
-                    {getRemainingDays(stats.nextDue.nextDueDate) && (
-                      <span className="ml-2 text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
-                        {getRemainingDays(stats.nextDue.nextDueDate)} days left
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  No upcoming payments
-                </p>
-              )}
             </div>
           </div>
         </motion.div>
